@@ -1,0 +1,33 @@
+<package>
+
+  <name>wm_frame_to_box</name>
+  <version>0.3.0</version>
+  <description>
+    take a frame rom a 2d image and depth from camera and turn them into a 3d box
+  </description>
+  <author email="philippe117@live.fr">Philippe La Madeleine</author>
+  <maintainer email="philippe117@live.fr">Philippe La Madeleine</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org/</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <run_depend>roscpp</run_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <build_depend>std_msgs</build_depend>
+  <run_depend>std_msgs</run_depend>
+  <build_depend>tf</build_depend>
+  <run_depend>tf</run_depend>
+  <build_depend>eigen_conversions</build_depend>
+  <run_depend>eigen_conversions</run_depend>
+  <build_depend>tf_conversions</build_depend>
+  <run_depend>tf_conversions</run_depend>
+  <build_depend>image_transport</build_depend>
+  <run_depend>image_transport</run_depend>
+
+</package>
