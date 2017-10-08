@@ -1,0 +1,10 @@
+<?xml version='1.0'?>
+
+<launch>
+    <node name="frame_to_box" pkg="wm_frame_to_box" type="wm_frame_to_box">
+    <param name="clear" value="true" />
+    <param name="image_ratio_h" value="1.221730476" />
+    <param name="image_ratio_v" value="0.785398163397" />
+    </node>
+
+</launch>

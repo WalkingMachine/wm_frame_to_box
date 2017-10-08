@@ -6,14 +6,13 @@
 #include <image_transport/image_transport.h>
 #include <tf/transform_broadcaster.h>
 #include <darknet_ros_msgs/BoundingBoxes.h>
-
+#include <>
 
 darknet_ros_msgs::BoundingBoxes BoundingBoxes2D;
 
-
-
-
-
+bool _CLEAR = true;  // Publish the boxes at about the same rate as yolo
+double _IMAGE_RATIO_H = 1.221730476;  // pixel to rad
+double _IMAGE_RATIO_V = 0.785398163397;  // pixel to rad
 
 // from: https://answers.ros.org/question/90696/get-depth-from-kinect-sensor-in-gazebo-simulator/
 typedef union U_FloatParse {
@@ -64,47 +63,59 @@ int ReadDepthData(unsigned int height_pos, unsigned int width_pos, sensor_msgs::
 
 
 
-
-
-
+// Save the bounding boxes for later
 void DNBB( darknet_ros_msgs::BoundingBoxes msg ){
 
     BoundingBoxes2D = msg;
 }
 
-
-
+// Receive the image and process the depth of the bounding boxes
 void ImageCB(const sensor_msgs::ImageConstPtr& msg){
 
     ulong L = BoundingBoxes2D.boundingBoxes.size();
     for (ulong i=0; i < L; i++ ){
+
+        // get frame
         int xmin = BoundingBoxes2D.boundingBoxes[i].xmin;
         int xmax = BoundingBoxes2D.boundingBoxes[i].xmax;
         int ymin = BoundingBoxes2D.boundingBoxes[i].ymin;
         int ymax = BoundingBoxes2D.boundingBoxes[i].ymax;
+
+        // get center
         int x = (xmax+xmin)/2;
         int y = (ymax+ymin)/2;
+
+        // apply limitations
         if (x<0) x=0;
         if (x>msg->width) x=msg->width;
         if (y<0) y=0;
         if (y>msg->height) y=msg->height;
 
 
+        double dist = ReadDepthData( (uint)x, (uint)y, msg )/1000.0;  // mm to m
 
-        ROS_INFO("x = %d", x );
-        ROS_INFO("y = %d", y );
+//        ROS_INFO("x = %d", x );
+//        ROS_INFO("y = %d", y );
+//        ROS_INFO("dist = %f", dist );
 
-        double dist = ReadDepthData( (uint)x, (uint)y, msg )/1000.0;
-        ROS_INFO("dist = %f", dist );
+        double ax = -((double)x-(double)msg->width/2)/(double)msg->width*_IMAGE_RATIO_H;  // pixel to angle
+        double ay = -((double)y-(double)msg->height/2)/(double)msg->height*_IMAGE_RATIO_V;  // pixel to angle
+
+        double ry = dist*std::sin(ax);  // ang to 3D point (rad to m)
+        double rz = dist*std::sin(ay);  // ang to 3D point (rad to m)
+        double rx = dist*std::cos(ax)*std::cos(ay);  // ang to 3D point (rad to m)
+
         static tf::TransformBroadcaster br;
         tf::Transform transform;
-        transform.setOrigin( tf::Vector3(dist, -((double)x-(double)msg->width/2)*0.0018*dist, -((double)y-(double)msg->height/2)*0.0018*dist) );
+        transform.setOrigin( tf::Vector3(rx, ry, rz) );
         tf::Quaternion q;
         q.setRPY(0, 0, 0);
         transform.setRotation(q);
         br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "head_xtion_depth_frame", BoundingBoxes2D.boundingBoxes[i].Class));
     }
 
+    if (_CLEAR)
+        BoundingBoxes2D.boundingBoxes.clear();
 }
 
 
@@ -113,6 +124,11 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "frame_to_box");
 
     ros::NodeHandle nh;
+
+    nh.getParam("clear", _CLEAR);
+    nh.getParam("image_ratio_h", _IMAGE_RATIO_H);
+    nh.getParam("image_ratio_v", _IMAGE_RATIO_V);
+
     image_transport::ImageTransport it(nh);
     image_transport::Subscriber sub = it.subscribe("/head_xtion/depth/image_raw", 1, ImageCB);
 
