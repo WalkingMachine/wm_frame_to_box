@@ -16,9 +16,10 @@ find_package(catkin REQUIRED COMPONENTS
         )
 
 add_message_files(
+        DIRECTORY msg
         FILES
-        BoundingBox3D.msg
-        BoundingBoxes3D.msg
+         BoundingBox3D.msg
+         BoundingBoxes3D.msg
 )
 
 generate_messages(

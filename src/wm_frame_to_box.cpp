@@ -6,15 +6,20 @@
 #include <image_transport/image_transport.h>
 #include <tf/transform_broadcaster.h>
 #include <darknet_ros_msgs/BoundingBoxes.h>
+#include <wm_frame_to_box/BoundingBoxes3D.h>
 
 darknet_ros_msgs::BoundingBoxes BoundingBoxes2D;
 
-bool _CLEAR = true;  // Publish the boxes at about the same rate as yolo
 double _IMAGE_RATIO_H = 1.221730476;  // pixel to rad
 double _IMAGE_RATIO_V = 0.785398163397;  // pixel to rad
 std::string _CAMERA_TOPIC = "/head_xtion/depth/image_raw";
 std::string _YOLO_TOPIC = "/darknet_ros/bounding_boxes";
 std::string _CAMERA_FRAME = "head_xtion_depth_frame";
+std::string _BOUNDING_BOXES_TOPIC = "/frame_to_box/bounding_boxes";
+double _DEFAULT_BOX_SIZE = 0.1;
+
+wm_frame_to_box::BoundingBoxes3D boxes;
+ros::Publisher posePub;
 
 // from: https://answers.ros.org/question/90696/get-depth-from-kinect-sensor-in-gazebo-simulator/
 typedef union U_FloatParse {
@@ -74,6 +79,9 @@ void DNBB( darknet_ros_msgs::BoundingBoxes msg ){
 // Receive the image and process the depth of the bounding boxes
 void ImageCB(const sensor_msgs::ImageConstPtr& msg){
 
+    boxes.boundingBoxes.clear();
+
+
     ulong L = BoundingBoxes2D.boundingBoxes.size();
     for (ulong i=0; i < L; i++ ){
 
@@ -100,13 +108,32 @@ void ImageCB(const sensor_msgs::ImageConstPtr& msg){
 //        ROS_INFO("y = %d", y );
 //        ROS_INFO("dist = %f", dist );
 
-        double ax = -((double)x-(double)msg->width/2)/(double)msg->width*_IMAGE_RATIO_H;  // pixel to angle
-        double ay = -((double)y-(double)msg->height/2)/(double)msg->height*_IMAGE_RATIO_V;  // pixel to angle
+        double xratio = msg->width*_IMAGE_RATIO_H;
+        double yratio = msg->height*_IMAGE_RATIO_V;
+
+        double ax = -((double)x-(double)msg->width/2)/xratio;  // pixel to angle
+        double ay = -((double)y-(double)msg->height/2)/yratio;  // pixel to angle
 
         double ry = dist*std::sin(ax);  // ang to 3D point (rad to m)
         double rz = dist*std::sin(ay);  // ang to 3D point (rad to m)
         double rx = dist*std::cos(ax)*std::cos(ay);  // ang to 3D point (rad to m)
 
+        // add the box to the message
+        wm_frame_to_box::BoundingBox3D box;
+        box.Class = BoundingBoxes2D.boundingBoxes[i].Class;
+        geometry_msgs::Point po;
+        po.x = rx;
+        po.y = ry;
+        po.z = rz;
+        box.Center = po;  // TODO set the right frame
+        box.Depth = _DEFAULT_BOX_SIZE;
+        box.Width = _DEFAULT_BOX_SIZE;
+        box.Height = _DEFAULT_BOX_SIZE;
+        box.probability = BoundingBoxes2D.boundingBoxes[i].probability;
+        boxes.boundingBoxes.push_back(box);
+        posePub.publish(boxes);
+
+        // broadcast the boxes to TF
         static tf::TransformBroadcaster br;
         tf::Transform transform;
         transform.setOrigin( tf::Vector3(rx, ry, rz) );
@@ -116,8 +143,14 @@ void ImageCB(const sensor_msgs::ImageConstPtr& msg){
         br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), _CAMERA_FRAME, BoundingBoxes2D.boundingBoxes[i].Class));
     }
 
-    if (_CLEAR)
-        BoundingBoxes2D.boundingBoxes.clear();
+    BoundingBoxes2D.boundingBoxes.clear();
+
+
+
+
+
+
+
 }
 
 
@@ -127,11 +160,12 @@ int main(int argc, char **argv) {
 
     ros::NodeHandle nh;
 
-    nh.getParam("clear", _CLEAR);
     nh.getParam("image_ratio_h", _IMAGE_RATIO_H);
     nh.getParam("image_ratio_v", _IMAGE_RATIO_V);
     nh.getParam("camera_topic", _CAMERA_TOPIC);
     nh.getParam("yolo_topic", _YOLO_TOPIC);
+    nh.getParam("bounding_boxes_topic", _BOUNDING_BOXES_TOPIC);
+    nh.getParam("default_box_size", _DEFAULT_BOX_SIZE);
     nh.getParam("camera_frame", _CAMERA_FRAME);
 
     image_transport::ImageTransport it(nh);
@@ -139,5 +173,12 @@ int main(int argc, char **argv) {
 
     ros::Subscriber bbsub = nh.subscribe(_YOLO_TOPIC, 1, DNBB);
 
-    ros::spin();
+    posePub = nh.advertise<wm_frame_to_box::BoundingBoxes3D>( _BOUNDING_BOXES_TOPIC, 10 );
+
+    ros::Rate period(0.1);  // 10 Hz
+    while( ros::ok() ){
+        ros::spinOnce();
+        period.sleep();
+    }
+
 }
