@@ -17,9 +17,11 @@ std::string _YOLO_TOPIC = "/darknet_ros/bounding_boxes";
 std::string _CAMERA_FRAME = "head_xtion_depth_frame";
 std::string _BOUNDING_BOXES_TOPIC = "/frame_to_box/bounding_boxes";
 double _DEFAULT_BOX_SIZE = 0.1;
+std::string _BASE_FRAME = "base_link";  // frame of the output
 
 wm_frame_to_box::BoundingBoxes3D boxes;
 ros::Publisher posePub;
+tf::Transformer transformer;
 
 // from: https://answers.ros.org/question/90696/get-depth-from-kinect-sensor-in-gazebo-simulator/
 typedef union U_FloatParse {
@@ -81,7 +83,6 @@ void ImageCB(const sensor_msgs::ImageConstPtr& msg){
 
     boxes.boundingBoxes.clear();
 
-
     ulong L = BoundingBoxes2D.boundingBoxes.size();
     for (ulong i=0; i < L; i++ ){
 
@@ -118,14 +119,32 @@ void ImageCB(const sensor_msgs::ImageConstPtr& msg){
         double rz = dist*std::sin(ay);  // ang to 3D point (rad to m)
         double rx = dist*std::cos(ax)*std::cos(ay);  // ang to 3D point (rad to m)
 
-        // add the box to the message
+        std::string BoxName = BoundingBoxes2D.boundingBoxes[i].Class;
+
+        // broadcast the boxe to TF
+        static tf::TransformBroadcaster br;
+        tf::Transform transform;
+        transform.setOrigin( tf::Vector3(rx, ry, rz) );
+        tf::Quaternion q;
+        q.setRPY(0, 0, 0);
+        transform.setRotation(q);
+        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), _CAMERA_FRAME, BoxName));
+
+        // create a box and set all the parameters
         wm_frame_to_box::BoundingBox3D box;
         box.Class = BoundingBoxes2D.boundingBoxes[i].Class;
+
+        // get the center of the box
+        tf::StampedTransform tranform;
+        transformer.lookupTransform( _BASE_FRAME, BoxName, ros::Time::now() , tranform );
+        tf::Vector3 origin = tranform.getOrigin();
         geometry_msgs::Point po;
-        po.x = rx;
-        po.y = ry;
-        po.z = rz;
-        box.Center = po;  // TODO set the right frame
+        po.x = origin.x();
+        po.y = origin.y();
+        po.z = origin.z();
+        box.Center = po;
+
+        // set the dimentions of the box
         box.Depth = _DEFAULT_BOX_SIZE;
         box.Width = _DEFAULT_BOX_SIZE;
         box.Height = _DEFAULT_BOX_SIZE;
@@ -133,23 +152,9 @@ void ImageCB(const sensor_msgs::ImageConstPtr& msg){
         boxes.boundingBoxes.push_back(box);
         posePub.publish(boxes);
 
-        // broadcast the boxes to TF
-        static tf::TransformBroadcaster br;
-        tf::Transform transform;
-        transform.setOrigin( tf::Vector3(rx, ry, rz) );
-        tf::Quaternion q;
-        q.setRPY(0, 0, 0);
-        transform.setRotation(q);
-        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), _CAMERA_FRAME, BoundingBoxes2D.boundingBoxes[i].Class));
     }
 
     BoundingBoxes2D.boundingBoxes.clear();
-
-
-
-
-
-
 
 }
 
@@ -167,6 +172,7 @@ int main(int argc, char **argv) {
     nh.getParam("bounding_boxes_topic", _BOUNDING_BOXES_TOPIC);
     nh.getParam("default_box_size", _DEFAULT_BOX_SIZE);
     nh.getParam("camera_frame", _CAMERA_FRAME);
+    nh.getParam("base_frame", _BASE_FRAME);
 
     image_transport::ImageTransport it(nh);
     image_transport::Subscriber sub = it.subscribe(_CAMERA_TOPIC, 1, ImageCB);

@@ -4,6 +4,7 @@
     <node name="frame_to_box" pkg="wm_frame_to_box" type="wm_frame_to_box">
         <param name="camera_topic" value="/head_xtion/depth/image_raw" />
         <param name="camera_frame" value="head_xtion_depth_frame" />
+        <param name="base_frame" value="base_link" />
         <param name="image_ratio_h" value="1.221730476" />
         <param name="image_ratio_v" value="0.785398163397" />
         <param name="yolo_topic" value="/darknet_ros/bounding_boxes" />
