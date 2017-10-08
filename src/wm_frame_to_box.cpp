@@ -6,13 +6,15 @@
 #include <image_transport/image_transport.h>
 #include <tf/transform_broadcaster.h>
 #include <darknet_ros_msgs/BoundingBoxes.h>
-#include <>
 
 darknet_ros_msgs::BoundingBoxes BoundingBoxes2D;
 
 bool _CLEAR = true;  // Publish the boxes at about the same rate as yolo
 double _IMAGE_RATIO_H = 1.221730476;  // pixel to rad
 double _IMAGE_RATIO_V = 0.785398163397;  // pixel to rad
+std::string _CAMERA_TOPIC = "/head_xtion/depth/image_raw";
+std::string _YOLO_TOPIC = "/darknet_ros/bounding_boxes";
+std::string _CAMERA_FRAME = "head_xtion_depth_frame";
 
 // from: https://answers.ros.org/question/90696/get-depth-from-kinect-sensor-in-gazebo-simulator/
 typedef union U_FloatParse {
@@ -111,7 +113,7 @@ void ImageCB(const sensor_msgs::ImageConstPtr& msg){
         tf::Quaternion q;
         q.setRPY(0, 0, 0);
         transform.setRotation(q);
-        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "head_xtion_depth_frame", BoundingBoxes2D.boundingBoxes[i].Class));
+        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), _CAMERA_FRAME, BoundingBoxes2D.boundingBoxes[i].Class));
     }
 
     if (_CLEAR)
@@ -128,11 +130,14 @@ int main(int argc, char **argv) {
     nh.getParam("clear", _CLEAR);
     nh.getParam("image_ratio_h", _IMAGE_RATIO_H);
     nh.getParam("image_ratio_v", _IMAGE_RATIO_V);
+    nh.getParam("camera_topic", _CAMERA_TOPIC);
+    nh.getParam("yolo_topic", _YOLO_TOPIC);
+    nh.getParam("camera_frame", _CAMERA_FRAME);
 
     image_transport::ImageTransport it(nh);
-    image_transport::Subscriber sub = it.subscribe("/head_xtion/depth/image_raw", 1, ImageCB);
+    image_transport::Subscriber sub = it.subscribe(_CAMERA_TOPIC, 1, ImageCB);
 
-    ros::Subscriber bbsub = nh.subscribe("/darknet_ros/bounding_boxes", 1, DNBB);
+    ros::Subscriber bbsub = nh.subscribe(_YOLO_TOPIC, 1, DNBB);
 
     ros::spin();
 }
