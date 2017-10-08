@@ -12,15 +12,20 @@ find_package(catkin REQUIRED COMPONENTS
         tf_conversions
         eigen_conversions
         image_transport
+        darknet_ros_msgs
         )
 
+add_message_files(
+        FILES
+        BoundingBox3D.msg
+        BoundingBoxes3D.msg
+)
 
 generate_messages(
         DEPENDENCIES geometry_msgs std_msgs
 )
 
 catkin_package(
-        INCLUDE_DIRS include
         CATKIN_DEPENDS std_msgs
         geometry_msgs
         roscpp
@@ -34,11 +39,9 @@ catkin_package(
 
 include_directories(
         ${catkin_INCLUDE_DIRS}
-        include
 )
 
 add_executable( ${PROJECT_NAME}
-        include/wm_frame_to_box.h
         src/wm_frame_to_box.cpp
         )
 
