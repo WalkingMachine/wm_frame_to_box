@@ -12,8 +12,8 @@
 
 darknet_ros_msgs::BoundingBoxes BoundingBoxes2D;
 
-double _IMAGE_RATIO_H = 1.221730476;  // pixel to rad
-double _IMAGE_RATIO_V = 0.785398163397;  // pixel to rad
+double _CAMERA_ANGLE_WIDTH = 1.221730476;  // pixel to rad
+double _CAMERA_ANGLE_HEIGHT = 0.785398163397;  // pixel to rad
 std::string _CAMERA_TOPIC = "/head_xtion/depth/image_raw";
 std::string _YOLO_TOPIC = "/darknet_ros/bounding_boxes";
 std::string _CAMERA_FRAME = "head_xtion_depth_frame";
@@ -84,8 +84,8 @@ void ImageCB(const sensor_msgs::ImageConstPtr& msg){
 //        ROS_INFO("y = %d", y );
 //        ROS_INFO("dist = %f", dist );
 
-        double xratio = msg->width*_IMAGE_RATIO_H;
-        double yratio = msg->height*_IMAGE_RATIO_V;
+        double xratio = _CAMERA_ANGLE_WIDTH/msg->width;
+        double yratio = _CAMERA_ANGLE_HEIGHT/msg->height;
 
         double ax = -((double)x-(double)msg->width/2)/xratio;  // pixel to angle
         double ay = -((double)y-(double)msg->height/2)/yratio;  // pixel to angle
@@ -140,8 +140,8 @@ int main(int argc, char **argv) {
 
     ros::NodeHandle nh;
 
-    nh.getParam("image_ratio_h", _IMAGE_RATIO_H);
-    nh.getParam("image_ratio_v", _IMAGE_RATIO_V);
+    nh.getParam("camera_angle_width", _CAMERA_ANGLE_WIDTH);
+    nh.getParam("camera_angle_height", _CAMERA_ANGLE_HEIGHT);
     nh.getParam("camera_topic", _CAMERA_TOPIC);
     nh.getParam("yolo_topic", _YOLO_TOPIC);
     nh.getParam("bounding_boxes_topic", _BOUNDING_BOXES_TOPIC);
