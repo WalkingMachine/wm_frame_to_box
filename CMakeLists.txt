@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
         eigen_conversions
         image_transport
         darknet_ros_msgs
+        cv_bridge
         )
 
 add_message_files(

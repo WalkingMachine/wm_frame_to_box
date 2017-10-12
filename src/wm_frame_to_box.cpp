@@ -7,6 +7,8 @@
 #include <tf/transform_broadcaster.h>
 #include <darknet_ros_msgs/BoundingBoxes.h>
 #include <wm_frame_to_box/BoundingBoxes3D.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
 
 darknet_ros_msgs::BoundingBoxes BoundingBoxes2D;
 
@@ -23,52 +25,25 @@ wm_frame_to_box::BoundingBoxes3D boxes;
 ros::Publisher posePub;
 tf::Transformer transformer;
 
-// from: https://answers.ros.org/question/90696/get-depth-from-kinect-sensor-in-gazebo-simulator/
-typedef union U_FloatParse {
-    float float_data;
-    unsigned char byte_data[4];
-} U_FloatConvert;
-int ReadDepthData(unsigned int height_pos, unsigned int width_pos, sensor_msgs::ImageConstPtr depth_image)
-{
-    // If position is invalid
-    if ((height_pos >= depth_image->height) || (width_pos >= depth_image->width))
-        return -1;
-    int index = (height_pos*depth_image->step) + (width_pos*(depth_image->step/depth_image->width));
-    // If data is 4 byte floats (rectified depth image)
-    if ((depth_image->step/depth_image->width) == 4) {
-        U_FloatConvert depth_data;
-        int i, endian_check = 1;
-        // If big endian
-        if ((depth_image->is_bigendian && (*(char*)&endian_check != 1)) ||  // Both big endian
-            ((!depth_image->is_bigendian) && (*(char*)&endian_check == 1))) { // Both lil endian
-            for (i = 0; i < 4; i++)
-                depth_data.byte_data[i] = depth_image->data[index + i];
-            // Make sure data is valid (check if NaN)
-            if (depth_data.float_data == depth_data.float_data)
-                return int(depth_data.float_data*1000);
-            return -1;  // If depth data invalid
-        }
-        // else, one little endian, one big endian
-        for (i = 0; i < 4; i++)
-            depth_data.byte_data[i] = depth_image->data[3 + index - i];
-        // Make sure data is valid (check if NaN)
-        if (depth_data.float_data == depth_data.float_data)
-            return int(depth_data.float_data*1000);
-        return -1;  // If depth data invalid
+double GetDepth( int x, int y, const sensor_msgs::ImageConstPtr& msg ){
+
+    cv_bridge::CvImagePtr cv_ptr;
+    try
+    {
+        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_16UC1);
     }
-    // Otherwise, data is 2 byte integers (raw depth image)
-    int temp_val;
-    // If big endian
-    if (depth_image->is_bigendian)
-        temp_val = (depth_image->data[index] << 8) + depth_image->data[index + 1];
-        // If little endian
-    else
-        temp_val = depth_image->data[index] + (depth_image->data[index + 1] << 8);
-    // Make sure data is valid (check if NaN)
-    if (temp_val == temp_val)
-        return temp_val;
-    return -1;  // If depth data invalid
+    catch (cv_bridge::Exception& e)
+    {
+        ROS_ERROR("cv_bridge exception: %s", e.what());
+        return -1;
+    }
+
+    int depth = cv_ptr->image.at<short int>(x, y);
+    ROS_INFO("Depth: %d", depth);
+
+    return depth/1000.0;
 }
+
 
 
 
@@ -103,7 +78,7 @@ void ImageCB(const sensor_msgs::ImageConstPtr& msg){
         if (y>msg->height) y=msg->height;
 
 
-        double dist = ReadDepthData( (uint)x, (uint)y, msg )/1000.0;  // mm to m
+        double dist = GetDepth( x, y, msg );
 
 //        ROS_INFO("x = %d", x );
 //        ROS_INFO("y = %d", y );
