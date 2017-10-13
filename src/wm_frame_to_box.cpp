@@ -14,14 +14,14 @@
 
 darknet_ros_msgs::BoundingBoxes BoundingBoxes2D;
 
-double _CAMERA_ANGLE_WIDTH = 1.221730476;  // pixel to rad
-double _CAMERA_ANGLE_HEIGHT = 0.785398163397;  // pixel to rad
-std::string _CAMERA_TOPIC = "/head_xtion/depth/image_raw";
-std::string _YOLO_TOPIC = "/darknet_ros/bounding_boxes";
-std::string _CAMERA_FRAME = "head_xtion_depth_frame";
-std::string _BOUNDING_BOXES_TOPIC = "/frame_to_box/bounding_boxes";
-double _DEFAULT_BOX_SIZE = 0.1;
-std::string _BASE_FRAME = "/base_link";  // frame of the output
+double _CAMERA_ANGLE_WIDTH;
+double _CAMERA_ANGLE_HEIGHT;
+std::string _CAMERA_TOPIC;
+std::string _YOLO_TOPIC;
+std::string _CAMERA_FRAME;
+std::string _BOUNDING_BOXES_TOPIC;
+double _DEFAULT_BOX_SIZE;
+std::string _BASE_FRAME;
 
 wm_frame_to_box::BoundingBoxes3D boxes;
 ros::Publisher posePub;
@@ -147,14 +147,14 @@ int main(int argc, char **argv) {
     Listener2 = &Listener;
 
     // get all parameters
-    nh.getParam("camera_angle_width", _CAMERA_ANGLE_WIDTH);
-    nh.getParam("camera_angle_height", _CAMERA_ANGLE_HEIGHT);
-    nh.getParam("camera_topic", _CAMERA_TOPIC);
-    nh.getParam("yolo_topic", _YOLO_TOPIC);
-    nh.getParam("bounding_boxes_topic", _BOUNDING_BOXES_TOPIC);
-    nh.getParam("default_box_size", _DEFAULT_BOX_SIZE);
-    nh.getParam("camera_frame", _CAMERA_FRAME);
-    nh.getParam("base_frame", _BASE_FRAME);
+    nh.param("camera_angle_width", _CAMERA_ANGLE_WIDTH, 1.012290966);
+    nh.param("camera_angle_height", _CAMERA_ANGLE_HEIGHT, 0.785398163397);
+    nh.param("camera_topic", _CAMERA_TOPIC, std::string("/head_xtion/depth/image_raw"));
+    nh.param("yolo_topic", _YOLO_TOPIC, std::string("/darknet_ros/bounding_boxes"));
+    nh.param("bounding_boxes_topic", _BOUNDING_BOXES_TOPIC, std::string("/frame_to_box/bounding_boxes"));
+    nh.param("default_box_size", _DEFAULT_BOX_SIZE, 0.1);
+    nh.param("camera_frame", _CAMERA_FRAME, std::string("head_xtion_depth_frame"));
+    nh.param("base_frame", _BASE_FRAME, std::string("/base_link"));
 
     // subscribe to the camera topic
     image_transport::ImageTransport it(nh);

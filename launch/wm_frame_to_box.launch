@@ -2,14 +2,14 @@
 
 <launch>
     <node name="frame_to_box" pkg="wm_frame_to_box" type="wm_frame_to_box">
-        <param name="camera_topic" value="/head_xtion/depth/image_raw" />
-        <param name="camera_frame" value="head_xtion_depth_frame" />
-        <param name="base_frame" value="base_link" />
-        <param name="camera_angle_width" value="1.221730476" />
-        <param name="camera_angle_height" value="0.785398163397" />
-        <param name="yolo_topic" value="/darknet_ros/bounding_boxes" />
-        <param name="bounding_boxes_topic" value="/frame_to_boxes/bounding_boxes" />
-        <param name="default_box_size" value="0.1" />
+        <param name="camera_topic"          type="string"   value="/head_xtion/depth/image" />
+        <param name="camera_frame"          type="string"   value="head_xtion_depth_frame" />
+        <param name="base_frame"            type="string"   value="base_link" />
+        <param name="camera_angle_width"    type="double"   value="1.012290966" />
+        <param name="camera_angle_height"   type="double"   value="0.785398163397" />
+        <param name="yolo_topic"            type="string"   value="/darknet_ros/bounding_boxes" />
+        <param name="bounding_boxes_topic"  type="string"   value="/frame_to_boxes/bounding_boxes" />
+        <param name="default_box_size"      type="double"   value="0.1" />
     </node>
 
 </launch>
