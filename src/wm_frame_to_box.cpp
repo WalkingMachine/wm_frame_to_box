@@ -81,57 +81,58 @@ void ImageCB(const sensor_msgs::ImageConstPtr& msg){
             if (y > ptr->image.cols) y = ptr->image.cols;
             double dist = GetDepth(x, y, ptr);
 
-            // pushing invalid values from the face
-            if (dist < 0.3)
-                dist = 0.3;
+            // filter invalid falues
+            if (dist > 0.3) {
 
-            // get pixel to rad ratio // TODO check if the dimentions are right
-            double xratio = _CAMERA_ANGLE_WIDTH / msg->width;
-            double yratio = _CAMERA_ANGLE_HEIGHT / msg->height;
 
-            // get the IRL angles from the camera center to the object
-            double ax = -((double) x - (double) msg->width / 2) * xratio;  // pixel to angle
-            double ay = -((double) y - (double) msg->height / 2) * yratio;  // pixel to angle
+                // get pixel to rad ratio // TODO check if the dimentions are right
+                double xratio = _CAMERA_ANGLE_WIDTH / msg->width;
+                double yratio = _CAMERA_ANGLE_HEIGHT / msg->height;
 
-            // calculate the relative position in the camera frame.
-            double ry = dist * std::sin(ax);  // ang to 3D point (rad to m)
-            double rz = dist * std::sin(ay);  // ang to 3D point (rad to m)
-            double rx = dist * std::cos(ax) * std::cos(ay);  // ang to 3D point (rad to m)
+                // get the IRL angles from the camera center to the object
+                double ax = -((double) x - (double) msg->width / 2) * xratio;  // pixel to angle
+                double ay = -((double) y - (double) msg->height / 2) * yratio;  // pixel to angle
 
-            // broadcast the boxe to TF
-            auto BoxName = BoundingBoxes2D.boundingBoxes[i].Class;
-            static tf::TransformBroadcaster br;
-            tf::Transform transform;
-            transform.setOrigin(tf::Vector3(rx, ry, rz));
-            tf::Quaternion q;
-            q.setRPY(0, 0, 0);
-            transform.setRotation(q);
-            br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), _CAMERA_FRAME, BoxName));
+                // calculate the relative position in the camera frame.
+                double ry = dist * std::sin(ax);  // ang to 3D point (rad to m)
+                double rz = dist * std::sin(ay);  // ang to 3D point (rad to m)
+                double rx = dist * std::cos(ax) * std::cos(ay);  // ang to 3D point (rad to m)
 
-            // create a box message and fill all the parameters
-            wm_frame_to_box::BoundingBox3D box;
-            box.Class = BoundingBoxes2D.boundingBoxes[i].Class;
+                // broadcast the boxe to TF
+                auto BoxName = BoundingBoxes2D.boundingBoxes[i].Class;
+                static tf::TransformBroadcaster br;
+                tf::Transform transform;
+                transform.setOrigin(tf::Vector3(rx, ry, rz));
+                tf::Quaternion q;
+                q.setRPY(0, 0, 0);
+                transform.setRotation(q);
+                br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), _CAMERA_FRAME, BoxName));
 
-            // get the center of the box relatively to the base_link using tf
-            tf::StampedTransform tranform;
-            std::string buffer = "/"+BoxName;
-            const char* BoxFrame = buffer.c_str();
-            Listener2->waitForTransform(BoxFrame ,_BASE_FRAME, ros::Time::now(), ros::Duration(0.1));
-            Listener2->lookupTransform( BoxFrame ,_BASE_FRAME, ros::Time(0), tranform);
-            tf::Vector3 origin = tranform.getOrigin();
-            geometry_msgs::Point po;
-            po.x = origin.x();
-            po.y = origin.y();
-            po.z = origin.z();
-            box.Center = po;
+                // create a box message and fill all the parameters
+                wm_frame_to_box::BoundingBox3D box;
+                box.Class = BoundingBoxes2D.boundingBoxes[i].Class;
 
-            // set the dimentions of the box
-            box.Depth = _DEFAULT_BOX_SIZE;
-            box.Width = _DEFAULT_BOX_SIZE;
-            box.Height = _DEFAULT_BOX_SIZE;
-            box.probability = BoundingBoxes2D.boundingBoxes[i].probability;
-            boxes.boundingBoxes.push_back(box);
-            posePub.publish(boxes);
+                // get the center of the box relatively to the base_link using tf
+                tf::StampedTransform tranform;
+                std::string buffer = "/" + BoxName;
+                const char *BoxFrame = buffer.c_str();
+                Listener2->waitForTransform(_BASE_FRAME, BoxFrame, ros::Time(0), ros::Duration(40));
+                Listener2->lookupTransform(_BASE_FRAME, BoxFrame, ros::Time(0), tranform);
+                tf::Vector3 origin = tranform.getOrigin();
+                geometry_msgs::Point po;
+                po.x = origin.x();
+                po.y = origin.y();
+                po.z = origin.z();
+                box.Center = po;
+
+                // set the dimentions of the box
+                box.Depth = _DEFAULT_BOX_SIZE;
+                box.Width = _DEFAULT_BOX_SIZE;
+                box.Height = _DEFAULT_BOX_SIZE;
+                box.probability = BoundingBoxes2D.boundingBoxes[i].probability;
+                boxes.boundingBoxes.push_back(box);
+                posePub.publish(boxes);
+            }
         }
     }
     BoundingBoxes2D.boundingBoxes.clear();
