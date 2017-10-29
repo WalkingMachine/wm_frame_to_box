@@ -2,7 +2,7 @@
 
 ## Description
 
-Node qui recois des cadres et les convertits en boites à l'aide du depth de la camera
+Node recevant des cadres et les convertissant en boites à l'aide du depth de la camera
 
 Testé pour fonctionner avec [ROS] kinetic et Ubuntu 16.04. Le code risque de changer à certain moments.
 La licence du code source est [MIT license](LICENSE).
@@ -15,7 +15,7 @@ Affiliation: Club étudiant Walking Machine, ÉTS**
 
 ### Buildé de la source
 
-#### Dépendences
+#### Dépendances
 
 - [Robot Operating System (ROS)](http://wiki.ros.org) (middleware pour la robotique),
 - [darknet_ros](https://github.com/leggedrobotics/darknet_ros) (package de darknet fait par leggedrobotics),
@@ -25,7 +25,7 @@ Affiliation: Club étudiant Walking Machine, ÉTS**
 
 #### Building
 
-Pour build la source, cloner la dernière version de ce repo dans votre workspace et compiler avec
+Pour build de la source, clonez la dernière version de ce repo dans votre workspace et compilez avec
 
 	cd catkin_workspace/src
 	git clone git@github.com:WalkingMachine/wm_frame_to_box.git
@@ -43,7 +43,7 @@ Lancer le launchfile avec
 
 ### frame_to_box
 
-Recois les câdres publié par darknet et le depth de la camera. Retourne des boites en 3d sous forme de tf et de message.
+Reçoit le depth de la camera et les cadres publiés par darknet. Retourne des boites en 3d sous forme de tf et de message.
 
 
 #### Topics Souscris
@@ -54,24 +54,24 @@ Recois les câdres publié par darknet et le depth de la camera. Retourne des bo
 
 * **`/darknet_ros/bounding_boxes`** ([darknet_ros_msgs/BoundingBoxes])
 
-	Les cadres 2d retourné par darknet_ros
+	Les cadres 2d retournés par darknet_ros
 
 #### Topics Publiés
 
 * **`/frame_to_box/bounding_boxes`** ([wm_frame_to_box/BoundingBoxes3D])
 
-	Les boites 3d obtenus
+	Les boites 3d obtenues
 
 
 #### Paramètres
 
 * **`camera_angle_width`** (float, default: 0.785398163397)
 
-	Largeur en radiant de l'ouverture de la camera
+	Largeur en radians de l'ouverture de la camera
 
 * **`camera_angle_height`** (float, default: 0.785398163397)
 
-	Hauteur en radiant de l'ouverture de la camera
+	Hauteur en radians de l'ouverture de la camera
 
 * **`camera_topic`** (string, default: "/head_xtion/depth/image_raw")
 
@@ -87,7 +87,7 @@ Recois les câdres publié par darknet et le depth de la camera. Retourne des bo
 
 * **`yolo_topic`** (string, default: "/darknet_ros/bounding_boxes")
 
-	Topic où aller chercher les câdres de darknet
+	Topic où aller chercher les cadres de darknet
 
 * **`bounding_boxes_topic`** (string, default: "/frame_to_boxes/bounding_boxes")
 
@@ -95,7 +95,7 @@ Recois les câdres publié par darknet et le depth de la camera. Retourne des bo
 
 * **`default_box_size`** (float, default: 0.1)
 
-	Dimentions standard des boites
+	Dimensions standards des boites
   
 
 [ROS]: http://www.ros.org
