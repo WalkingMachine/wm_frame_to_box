@@ -81,6 +81,9 @@ void ImageCB(const sensor_msgs::ImageConstPtr& msg){
             if (y > ptr->image.cols) y = ptr->image.cols;
             double dist = GetDepth(x, y, ptr);
 
+            // add a 5 cm offset to compensate depth
+            dist += 0.05;
+
             // filter invalid falues
             if (dist > 0.3) {
 
