@@ -19,12 +19,20 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
         DIRECTORY msg
         FILES
-         BoundingBox3D.msg
-         BoundingBoxes3D.msg
+        BoundingBox3D.msg
+        BoundingBoxes3D.msg
+        BoundingBox2D.msg
+        BoundingBoxes2D.msg
+)
+
+add_service_files(
+        DIRECTORY srv
+        FILES
+        GetBoundingBoxes3D.srv
 )
 
 generate_messages(
-        DEPENDENCIES geometry_msgs std_msgs
+        DEPENDENCIES geometry_msgs std_msgs sensor_msgs
 )
 
 catkin_package(

@@ -1,0 +1,4 @@
+BoundingBox2D[] Frame
+sensor_msgs/Image image
+---
+BoundingBox3D[] boundingBoxes
