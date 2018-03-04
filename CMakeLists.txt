@@ -14,16 +14,13 @@ find_package(catkin REQUIRED COMPONENTS
         image_transport
         darknet_ros_msgs
         cv_bridge
+        sara_msgs
         )
 
-add_message_files(
-        DIRECTORY msg
-        FILES
-        BoundingBox3D.msg
-        BoundingBoxes3D.msg
-        BoundingBox2D.msg
-        BoundingBoxes2D.msg
-)
+#add_message_files(
+#        DIRECTORY msg
+#        FILES
+#)
 
 add_service_files(
         DIRECTORY srv
@@ -32,7 +29,11 @@ add_service_files(
 )
 
 generate_messages(
-        DEPENDENCIES geometry_msgs std_msgs sensor_msgs
+        DEPENDENCIES
+        sara_msgs
+        geometry_msgs
+        std_msgs
+        sensor_msgs
 )
 
 catkin_package(
@@ -45,6 +46,7 @@ catkin_package(
         tf
         tf_conversions
         eigen_conversions
+        sara_msgs
 )
 
 include_directories(
