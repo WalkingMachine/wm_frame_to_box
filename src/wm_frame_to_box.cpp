@@ -19,6 +19,7 @@ std::string _CAMERA_TOPIC;
 std::string _YOLO_TOPIC;
 std::string _CAMERA_FRAME;
 std::string _BOUNDING_BOXES_TOPIC;
+bool _AUTO_PLUBLISHER;
 double _DEFAULT_BOX_SIZE;
 std::string _BASE_FRAME;
 cv_bridge::CvImagePtr LastImage;
@@ -220,6 +221,8 @@ int main(int argc, char **argv) {
     Listener2 = &Listener;
 
     // get all parameters
+    nh.param("auto_publisher", _AUTO_PLUBLISHER, bool(true));
+    ROS_INFO("base_frame = %s", _BASE_FRAME.c_str());
     nh.param("camera_angle_width", _CAMERA_ANGLE_WIDTH, 1.012290966);
     ROS_INFO("camera_angle_width = %f", _CAMERA_ANGLE_WIDTH);
     nh.param("camera_angle_height", _CAMERA_ANGLE_HEIGHT, 0.785398163397);
@@ -242,12 +245,13 @@ int main(int argc, char **argv) {
     image_transport::Subscriber sub = it.subscribe(_CAMERA_TOPIC, 1, ImageCB);
     LastImage = nullptr;
 
-    // subscribe to the yolo topic
-    ros::Subscriber bbsub = nh.subscribe(_YOLO_TOPIC, 1, callbackBB);
+    if (_AUTO_PLUBLISHER) {
+        // subscribe to the yolo topic
+        ros::Subscriber bbsub = nh.subscribe(_YOLO_TOPIC, 1, callbackBB);
 
-    // advertise the box3D topic
-    posePub = nh.advertise<sara_msgs::BoundingBoxes3D>(_BOUNDING_BOXES_TOPIC, 10);
-
+        // advertise the box3D topic
+        posePub = nh.advertise<sara_msgs::BoundingBoxes3D>(_BOUNDING_BOXES_TOPIC, 10);
+    }
     // advertise the service
     ros::ServiceServer service = nh.advertiseService("get_3d_bounding_boxes", seviceCB);
     // run run run!

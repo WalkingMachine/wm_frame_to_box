@@ -75,7 +75,10 @@ Reçoit le depth de la camera et les cadres publiés par darknet. Retourne des b
 	- sara_msgs/BoundingBoxes3D boundingBoxes3D
 
 #### Paramètres
+* **`auto_publisher`** (bool, default: true)
 
+	Largeur en radians de l'ouverture de la camera
+	
 * **`camera_angle_width`** (float, default: 0.785398163397)
 
 	Largeur en radians de l'ouverture de la camera
