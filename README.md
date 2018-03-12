@@ -18,6 +18,7 @@ Affiliation: Club étudiant Walking Machine, ÉTS**
 #### Dépendances
 
 - [Robot Operating System (ROS)](http://wiki.ros.org) (middleware pour la robotique),
+- [sara_msg](https://github.com/WalkingMachine/sara_msgs) (repo pour les messages utilisé par sara),
 - [darknet_ros](https://github.com/leggedrobotics/darknet_ros) (package de darknet fait par leggedrobotics),
 - [Openni] (camera 3d)
 - [Open_cv] (vision artificielle)
@@ -62,6 +63,16 @@ Reçoit le depth de la camera et les cadres publiés par darknet. Retourne des b
 
 	Les boites 3d obtenues
 
+#### Service
+
+* **`/frame_to_box/GetBoundingBoxes3D`** ([wm_frame_to_box/GetBoundingBoxes3D])
+
+	Recois une depth Image et une liste de BoundingBoxes2D.
+	- sara_msgs/BoundingBoxes2D boundingBoxes2D
+	- sensor_msgs/Image Image
+	
+	Retourne une liste des BoundingBoxes3D
+	- sara_msgs/BoundingBoxes3D boundingBoxes3D
 
 #### Paramètres
 
