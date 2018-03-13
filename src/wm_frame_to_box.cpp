@@ -40,7 +40,7 @@ std::vector<darknet_ros_msgs::BoundingBox> ConvertBB(std::vector<sara_msgs::Boun
         darknet_ros_msgs::BoundingBox BBOut;
         BBOut.Class = DBB.Class;
         BBOut.probability = DBB.probability;
-        BBOut.xmax = DBB.xmin;
+        BBOut.xmax = DBB.xmax;
         BBOut.xmin = DBB.xmin;
         BBOut.ymax = DBB.ymax;
         BBOut.ymin = DBB.ymin;
@@ -238,12 +238,12 @@ int main(int argc, char **argv) {
     ROS_INFO("base_frame = %s", _BASE_FRAME.c_str());
 
     // subscribe to the camera topic
-    image_transport::ImageTransport it(nh);
-    image_transport::Subscriber sub = it.subscribe(_CAMERA_TOPIC, 1, ImageCB);
+//    image_transport::ImageTransport it(nh);
+//    image_transport::Subscriber sub = it.subscribe(_CAMERA_TOPIC, 1, ImageCB);
     LastImage = nullptr;
 
     // subscribe to the yolo topic
-    ros::Subscriber bbsub = nh.subscribe(_YOLO_TOPIC, 1, callbackBB);
+//    ros::Subscriber bbsub = nh.subscribe(_YOLO_TOPIC, 1, callbackBB);
 
     // advertise the box3D topic
     posePub = nh.advertise<sara_msgs::BoundingBoxes3D>(_BOUNDING_BOXES_TOPIC, 10);
