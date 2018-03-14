@@ -20,6 +20,8 @@ std::string _YOLO_TOPIC;
 std::string _CAMERA_FRAME;
 std::string _BOUNDING_BOXES_TOPIC;
 bool _AUTO_PLUBLISHER;
+double _MIN_DIST;
+double _MAX_DIST;
 double _DEFAULT_BOX_SIZE;
 std::string _BASE_FRAME;
 cv_bridge::CvImagePtr LastImage;
@@ -104,8 +106,10 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         dist += 0.05;
 
         // filter invalid falues
-        if (dist < 0.2)
+        if (dist < _MIN_DIST || dist > _MAX_DIST){
+            BBs[i].probability = 0;
             dist = 0.2;
+        }
         ROS_INFO("%s dist: %lf", BBs[i].Class.data(), dist);
 
 
@@ -223,6 +227,10 @@ int main(int argc, char **argv) {
     // get all parameters
     nh.param("auto_publisher", _AUTO_PLUBLISHER, bool(true));
     ROS_INFO("base_frame = %s", _BASE_FRAME.c_str());
+    nh.param("minimum_distance", _MIN_DIST, 0.2);
+    ROS_INFO("minimum_distance = %lf", _MIN_DIST);
+    nh.param("maximum_distance", _MAX_DIST, 50.0);
+    ROS_INFO("maximum_distance = %lf", _MAX_DIST);
     nh.param("camera_angle_width", _CAMERA_ANGLE_WIDTH, 1.012290966);
     ROS_INFO("camera_angle_width = %f", _CAMERA_ANGLE_WIDTH);
     nh.param("camera_angle_height", _CAMERA_ANGLE_HEIGHT, 0.785398163397);
