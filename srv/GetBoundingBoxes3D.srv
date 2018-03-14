@@ -1,0 +1,4 @@
+sara_msgs/BoundingBox2D[] boundingBoxes2D
+sensor_msgs/Image image
+---
+sara_msgs/BoundingBox3D[] boundingBoxes3D

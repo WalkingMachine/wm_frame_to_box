@@ -2,6 +2,7 @@
 
 <launch>
 
+    <param name="auto_publisher"        type="bool"     value="false" />
     <param name="camera_topic"          type="string"   value="/head_xtion/depth/image_raw" />
     <param name="camera_frame"          type="string"   value="head_xtion_depth_frame" />
     <param name="base_frame"            type="string"   value="base_link" />

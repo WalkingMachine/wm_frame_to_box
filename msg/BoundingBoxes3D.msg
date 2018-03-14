@@ -1,1 +1,0 @@
-BoundingBox3D[] boundingBoxes
