@@ -172,8 +172,8 @@ void callbackBB(darknet_ros_msgs::BoundingBoxes msg) {
         return;
     }
     try {
-        std::vector<sara_msgs::BoundingBox3D> boxes3D;
-        boxes3D = get_BB(LastImage, msg.boundingBoxes);
+        sara_msgs::BoundingBoxes3D boxes3D;
+        boxes3D.boundingBoxes = get_BB(LastImage, msg.boundingBoxes);
         posePub.publish(boxes3D);
     }catch (std::string exeption) {
         ROS_ERROR("callack error");
