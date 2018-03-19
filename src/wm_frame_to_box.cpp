@@ -25,10 +25,19 @@ double _MAX_DIST;
 double _DEFAULT_BOX_SIZE;
 std::string _BASE_FRAME;
 cv_bridge::CvImagePtr LastImage;
-
 ros::Publisher posePub;
-
 tf::TransformListener *Listener2;
+
+
+// Declare functions
+std::vector<darknet_ros_msgs::BoundingBox> ConvertBB(std::vector<sara_msgs::BoundingBox2D> DBBs);
+double GetDepth(int x, int y, const cv_bridge::CvImagePtr cv_ptr);
+std::vector<sara_msgs::BoundingBox3D>
+get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs, std::string input_frame, std::string output_frame);
+void callbackBB(darknet_ros_msgs::BoundingBoxes msg);
+void ImageCB(const sensor_msgs::ImageConstPtr &msg);
+bool seviceCB(wm_frame_to_box::GetBoundingBoxes3D::Request &req, wm_frame_to_box::GetBoundingBoxes3D::Response &resp);
+
 
 
 
@@ -72,7 +81,12 @@ double GetDepth(int x, int y, const cv_bridge::CvImagePtr cv_ptr) {
  * @return boxes    3D bounding boxes
  */
 std::vector<sara_msgs::BoundingBox3D>
-get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs) {
+get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs, std::string input_frame, std::string output_frame) {
+
+    if (input_frame == "")
+        input_frame = _CAMERA_FRAME;
+    if (output_frame == "")
+        output_frame = _BASE_FRAME;
 
     sara_msgs::BoundingBoxes3D_<std::allocator<void>> boxes;
     boxes = sara_msgs::BoundingBoxes3D();
@@ -134,7 +148,7 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         tf::Quaternion q;
         q.setRPY(0, 0, 0);
         transform.setRotation(q);
-        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), _CAMERA_FRAME, BoxName));
+        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), input_frame, BoxName));
 
         // create a box message and fill all the parameters
         sara_msgs::BoundingBox3D box;
@@ -144,8 +158,8 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         tf::StampedTransform tranform;
         std::string buffer = "/" + BoxName;
         const char *BoxFrame = buffer.c_str();
-        Listener2->waitForTransform(_BASE_FRAME, BoxFrame, ros::Time(0), ros::Duration(40));
-        Listener2->lookupTransform(_BASE_FRAME, BoxFrame, ros::Time(0), tranform);
+        Listener2->waitForTransform(output_frame, BoxFrame, ros::Time(0), ros::Duration(40));
+        Listener2->lookupTransform(output_frame, BoxFrame, ros::Time(0), tranform);
         tf::Vector3 origin = tranform.getOrigin();
         geometry_msgs::Point po;
         po.x = origin.x();
@@ -177,7 +191,7 @@ void callbackBB(darknet_ros_msgs::BoundingBoxes msg) {
     }
     try {
         sara_msgs::BoundingBoxes3D boxes3D;
-        boxes3D.boundingBoxes = get_BB(LastImage, msg.boundingBoxes);
+        boxes3D.boundingBoxes = get_BB(LastImage, msg.boundingBoxes, "", "");
         posePub.publish(boxes3D);
     }catch (std::string exeption) {
         ROS_ERROR("callack error");
@@ -201,7 +215,7 @@ void ImageCB(const sensor_msgs::ImageConstPtr &msg) {
 bool seviceCB(wm_frame_to_box::GetBoundingBoxes3D::Request &req, wm_frame_to_box::GetBoundingBoxes3D::Response &resp) {
     try {
         cv_bridge::CvImagePtr ptr = cv_bridge::toCvCopy(req.image);
-        resp.boundingBoxes3D = get_BB(ptr, ConvertBB(req.boundingBoxes2D));
+        resp.boundingBoxes3D = get_BB(ptr, ConvertBB(req.boundingBoxes2D), req.input_frame, req.output_frame);
     }
     catch (std::string exeption) {
         ROS_ERROR("service error");
