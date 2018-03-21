@@ -5,11 +5,12 @@
 #include <image_transport/image_transport.h>
 #include <tf/transform_broadcaster.h>
 #include <cv_bridge/cv_bridge.h>
-#include <tf/transform_listener.h>
 #include "sara_msgs/BoundingBoxes2D.h"
 #include "sara_msgs/BoundingBoxes3D.h"
 #include "wm_frame_to_box/GetBoundingBoxes3D.h"
 #include <darknet_ros_msgs/BoundingBoxes.h>
+#include <tf/transform_listener.h>
+#include <tf/message_filter.h>
 
 darknet_ros_msgs::BoundingBoxes BoundingBoxes2D;
 
@@ -106,9 +107,6 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         int x = (xmax + xmin) / 2;
         int y = (ymax + ymin) / 2;
 
-        ROS_INFO("width: %d", Img->image.size.p[1]);
-        ROS_INFO("height: %d", Img->image.size.p[0]);
-
         // apply limitations
         if (x < 0) x = 0;
         if (x > Img->image.size.p[1]) x = Img->image.size.p[1];
@@ -124,7 +122,7 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
             BBs[i].probability = 0;
             dist = 0.2;
         }
-        ROS_INFO("%s dist: %lf", BBs[i].Class.data(), dist);
+        ROS_INFO("%s dist: %lf prob: %lf", BBs[i].Class.data(), dist, BBs[i].probability);
 
 
         // get pixel to rad ratio // TODO check if the dimentions are right
@@ -135,36 +133,34 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         double ax = -((double) x - (double) Img->image.size.p[1] / 2) * xratio;  // pixel to angle
         double ay = -((double) y - (double) Img->image.size.p[0] / 2) * yratio;  // pixel to angle
 
-        // calculate the relative position in the camera frame.
-        double ry = dist * std::sin(ax);  // ang to 3D point (rad to m)
-        double rz = dist * std::sin(ay);  // ang to 3D point (rad to m)
-        double rx = dist * std::cos(ax) * std::cos(ay);  // ang to 3D point (rad to m)
+        // Convert the angeles and distance to x y z coordinates
+        double px{dist * std::cos(ax) * std::cos(ay)};  // ang to 3D point (rad to m)
+        double py{dist * std::sin(ax)};  // ang to 3D point (rad to m)
+        double pz{dist * std::sin(ay)};  // ang to 3D point (rad to m)
 
-        // broadcast the boxe to TF
-        auto BoxName = BBs[i].Class;
-        static tf::TransformBroadcaster br;
-        tf::Transform transform;
-        transform.setOrigin(tf::Vector3(rx, ry, rz));
-        tf::Quaternion q;
-        q.setRPY(0, 0, 0);
-        transform.setRotation(q);
-        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), input_frame, BoxName));
+        /*** TF frame transformation ***/
+        // Create the tf point
+        tf::TransformListener tfl;
+        tf::Stamped<tf::Vector3> loc;
+        loc.frame_id_ = input_frame;  // Reference frame
+        loc.setY(py);
+        loc.setZ(pz);
+        loc.setX(px);
 
+        // Apply transformation to the new reference frame
+        tfl.waitForTransform(output_frame, input_frame, ros::Time(0), ros::Duration(40));
+        tfl.transformPoint(output_frame, loc, loc );
+
+        // extract the new coordinates
+        geometry_msgs::Point po;
+        po.x = loc.x();
+        po.y = loc.y();
+        po.z = loc.z();
+
+        /*** Create the box ***/
         // create a box message and fill all the parameters
         sara_msgs::BoundingBox3D box;
         box.Class = BBs[i].Class;
-
-        // get the center of the box relatively to the base_link using tf
-        tf::StampedTransform tranform;
-        std::string buffer = "/" + BoxName;
-        const char *BoxFrame = buffer.c_str();
-        Listener2->waitForTransform(output_frame, BoxFrame, ros::Time(0), ros::Duration(40));
-        Listener2->lookupTransform(output_frame, BoxFrame, ros::Time(0), tranform);
-        tf::Vector3 origin = tranform.getOrigin();
-        geometry_msgs::Point po;
-        po.x = origin.x();
-        po.y = origin.y();
-        po.z = origin.z();
         box.Center = po;
 
         // set the dimentions of the box
@@ -172,7 +168,11 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         box.Width = _DEFAULT_BOX_SIZE;
         box.Height = _DEFAULT_BOX_SIZE;
         box.probability = BBs[i].probability;
+
+        // Add the box to the list of boxes
         boxes.boundingBoxes.push_back(box);
+
+        /*** Publish the boxes ***/
         posePub.publish(boxes);
 
     }
