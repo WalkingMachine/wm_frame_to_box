@@ -2,8 +2,8 @@
 
 <launch>
 
-    <param name="minimum_distance"      type="double"   value="0.2" />
-    <param name="maximum_distance"      type="double"   value="50" />
+    <param name="minimum_distance"      type="double"   value="0.5" />
+    <param name="maximum_distance"      type="double"   value="20" />
     <param name="auto_publisher"        type="bool"     value="false" />
     <param name="camera_topic"          type="string"   value="/head_xtion/depth/image_raw" />
     <param name="camera_frame"          type="string"   value="head_xtion_depth_frame" />
