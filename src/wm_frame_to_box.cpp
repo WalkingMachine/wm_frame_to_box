@@ -23,6 +23,7 @@ bool _AUTO_PLUBLISHER;
 double _MIN_DIST;
 double _MAX_DIST;
 double _DEFAULT_BOX_SIZE;
+double _FRAME_LAG;
 std::string _BASE_FRAME;
 cv_bridge::CvImagePtr LastImage;
 ros::Publisher posePub;
@@ -146,7 +147,7 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         transform.setOrigin({px,py,pz});
 
         // Apply transformation to the new reference frame
-        ros::Time past{ros::Time::now()-ros::Duration(1.0)};
+        ros::Time past{ros::Time::now()-ros::Duration(_FRAME_LAG)};
         tfl->waitForTransform(output_frame, input_frame, past, ros::Duration(1.0));
         tfl->lookupTransform(output_frame, input_frame, past, transform);
 
@@ -245,6 +246,8 @@ int main(int argc, char **argv) {
     ROS_INFO("minimum_distance = %lf", _MIN_DIST);
     nh.param("maximum_distance", _MAX_DIST, 50.0);
     ROS_INFO("maximum_distance = %lf", _MAX_DIST);
+    nh.param("frame_lag", _FRAME_LAG, 0.0);
+    ROS_INFO("frame_lag = %lf", _FRAME_LAG);
     nh.param("camera_angle_width", _CAMERA_ANGLE_WIDTH, 1.012290966);
     ROS_INFO("camera_angle_width = %f", _CAMERA_ANGLE_WIDTH);
     nh.param("camera_angle_height", _CAMERA_ANGLE_HEIGHT, 0.785398163397);
