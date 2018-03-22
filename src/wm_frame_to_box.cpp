@@ -26,6 +26,7 @@ double _DEFAULT_BOX_SIZE;
 std::string _BASE_FRAME;
 cv_bridge::CvImagePtr LastImage;
 ros::Publisher posePub;
+tf::TransformListener *tfl;
 
 
 // Declare functions
@@ -90,6 +91,9 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
     sara_msgs::BoundingBoxes3D_<std::allocator<void>> boxes;
     boxes = sara_msgs::BoundingBoxes3D();
 
+    if (tfl == nullptr)
+        return boxes.boundingBoxes;
+
     ulong L = BBs.size();
     if (L == 0)
         return boxes.boundingBoxes;
@@ -138,12 +142,13 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
 
         /*** TF frame transformation ***/
         // Create the tf point
-        tf::TransformListener tfl;
         tf::StampedTransform transform;
         transform.setOrigin({px,py,pz});
 
         // Apply transformation to the new reference frame
-        tfl.lookupTransform(output_frame, input_frame, ros::Time(-1.0), transform);
+        ros::Time past{ros::Time::now()-ros::Duration(1.0)};
+        tfl->waitForTransform(output_frame, input_frame, past, ros::Duration(1.0));
+        tfl->lookupTransform(output_frame, input_frame, past, transform);
 
         // extract the new coordinates
         auto origin{transform.getOrigin()};
@@ -262,6 +267,9 @@ int main(int argc, char **argv) {
     image_transport::Subscriber sub = it.subscribe(_CAMERA_TOPIC, 1, ImageCB);
     LastImage = nullptr;
 
+    // Initialise tf listener
+    tfl = new tf::TransformListener(nh, ros::Duration(5) ,true);
+
     if (_AUTO_PLUBLISHER) {
         // subscribe to the yolo topic
         ros::Subscriber bbsub = nh.subscribe(_YOLO_TOPIC, 1, callbackBB);
@@ -273,4 +281,6 @@ int main(int argc, char **argv) {
     ros::ServiceServer service = nh.advertiseService("get_3d_bounding_boxes", seviceCB);
     // run run run!
     ros::spin();
+
+    delete(tfl);
 }
