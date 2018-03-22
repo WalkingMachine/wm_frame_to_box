@@ -3,7 +3,6 @@
 //
 
 #include <image_transport/image_transport.h>
-#include <tf/transform_broadcaster.h>
 #include <cv_bridge/cv_bridge.h>
 #include "sara_msgs/BoundingBoxes2D.h"
 #include "sara_msgs/BoundingBoxes3D.h"
@@ -27,7 +26,6 @@ double _DEFAULT_BOX_SIZE;
 std::string _BASE_FRAME;
 cv_bridge::CvImagePtr LastImage;
 ros::Publisher posePub;
-tf::TransformListener *Listener2;
 
 
 // Declare functions
@@ -141,21 +139,20 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         /*** TF frame transformation ***/
         // Create the tf point
         tf::TransformListener tfl;
-        tf::Stamped<tf::Vector3> loc;
-        loc.frame_id_ = input_frame;  // Reference frame
-        loc.setY(py);
-        loc.setZ(pz);
-        loc.setX(px);
+        tf::StampedTransform transform;
+        transform.setOrigin({px,py,pz});
 
         // Apply transformation to the new reference frame
-        tfl.waitForTransform(output_frame, input_frame, ros::Time(0), ros::Duration(40));
-        tfl.transformPoint(output_frame, loc, loc );
+        tfl.lookupTransform(output_frame, input_frame, ros::Time(-1.0), transform);
 
         // extract the new coordinates
+        auto origin{transform.getOrigin()};
+
+        // Generate the center of the box
         geometry_msgs::Point po;
-        po.x = loc.x();
-        po.y = loc.y();
-        po.z = loc.z();
+        po.x = origin.x();
+        po.y = origin.y();
+        po.z = origin.z();
 
         /*** Create the box ***/
         // create a box message and fill all the parameters
@@ -235,8 +232,6 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "frame_to_box");
 
     ros::NodeHandle nh;
-    tf::TransformListener Listener;
-    Listener2 = &Listener;
 
     // get all parameters
     nh.param("auto_publisher", _AUTO_PLUBLISHER, bool(true));
