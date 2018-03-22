@@ -143,22 +143,23 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
 
         /*** TF frame transformation ***/
         // Create the tf point
-        tf::StampedTransform transform;
-        transform.setOrigin({px,py,pz});
+        tf::Stamped<tf::Vector3> loc;
+        loc.frame_id_ = input_frame;  // Reference frame
+        loc.setY(py);
+        loc.setZ(pz);
+        loc.setX(px);
 
         // Apply transformation to the new reference frame
         ros::Time past{ros::Time::now()-ros::Duration(_FRAME_LAG)};
+        loc.stamp_ = past;
         tfl->waitForTransform(output_frame, input_frame, past, ros::Duration(1.0));
-        tfl->lookupTransform(output_frame, input_frame, past, transform);
-
-        // extract the new coordinates
-        auto origin{transform.getOrigin()};
+        tfl->transformPoint(output_frame, loc, loc );
 
         // Generate the center of the box
         geometry_msgs::Point po;
-        po.x = origin.x();
-        po.y = origin.y();
-        po.z = origin.z();
+        po.x = loc.x();
+        po.y = loc.y();
+        po.z = loc.z();
 
         /*** Create the box ***/
         // create a box message and fill all the parameters
