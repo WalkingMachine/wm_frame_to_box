@@ -3,7 +3,6 @@
 //
 
 #include <image_transport/image_transport.h>
-#include <tf/transform_broadcaster.h>
 #include <cv_bridge/cv_bridge.h>
 #include "sara_msgs/BoundingBoxes2D.h"
 #include "sara_msgs/BoundingBoxes3D.h"
@@ -24,10 +23,11 @@ bool _AUTO_PLUBLISHER;
 double _MIN_DIST;
 double _MAX_DIST;
 double _DEFAULT_BOX_SIZE;
+double _FRAME_LAG;
 std::string _BASE_FRAME;
 cv_bridge::CvImagePtr LastImage;
 ros::Publisher posePub;
-tf::TransformListener *Listener2;
+tf::TransformListener *tfl;
 
 
 // Declare functions
@@ -92,6 +92,9 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
     sara_msgs::BoundingBoxes3D_<std::allocator<void>> boxes;
     boxes = sara_msgs::BoundingBoxes3D();
 
+    if (tfl == nullptr)
+        return boxes.boundingBoxes;
+
     ulong L = BBs.size();
     if (L == 0)
         return boxes.boundingBoxes;
@@ -140,7 +143,6 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
 
         /*** TF frame transformation ***/
         // Create the tf point
-        tf::TransformListener tfl;
         tf::Stamped<tf::Vector3> loc;
         loc.frame_id_ = input_frame;  // Reference frame
         loc.setY(py);
@@ -148,10 +150,12 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         loc.setX(px);
 
         // Apply transformation to the new reference frame
-        tfl.waitForTransform(output_frame, input_frame, ros::Time(0), ros::Duration(40));
-        tfl.transformPoint(output_frame, loc, loc );
+        ros::Time past{ros::Time::now()-ros::Duration(_FRAME_LAG)};
+        loc.stamp_ = past;
+        tfl->waitForTransform(output_frame, input_frame, past, ros::Duration(1.0));
+        tfl->transformPoint(output_frame, loc, loc );
 
-        // extract the new coordinates
+        // Generate the center of the box
         geometry_msgs::Point po;
         po.x = loc.x();
         po.y = loc.y();
@@ -235,16 +239,16 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "frame_to_box");
 
     ros::NodeHandle nh;
-    tf::TransformListener Listener;
-    Listener2 = &Listener;
 
     // get all parameters
     nh.param("auto_publisher", _AUTO_PLUBLISHER, bool(true));
-    ROS_INFO("base_frame = %s", _BASE_FRAME.c_str());
+    ROS_INFO("auto_publisher = %d", _AUTO_PLUBLISHER);
     nh.param("minimum_distance", _MIN_DIST, 0.2);
     ROS_INFO("minimum_distance = %lf", _MIN_DIST);
     nh.param("maximum_distance", _MAX_DIST, 50.0);
     ROS_INFO("maximum_distance = %lf", _MAX_DIST);
+    nh.param("frame_lag", _FRAME_LAG, 0.0);
+    ROS_INFO("frame_lag = %lf", _FRAME_LAG);
     nh.param("camera_angle_width", _CAMERA_ANGLE_WIDTH, 1.012290966);
     ROS_INFO("camera_angle_width = %f", _CAMERA_ANGLE_WIDTH);
     nh.param("camera_angle_height", _CAMERA_ANGLE_HEIGHT, 0.785398163397);
@@ -267,6 +271,9 @@ int main(int argc, char **argv) {
     image_transport::Subscriber sub = it.subscribe(_CAMERA_TOPIC, 1, ImageCB);
     LastImage = nullptr;
 
+    // Initialise tf listener
+    tfl = new tf::TransformListener(nh, ros::Duration(5) ,true);
+
     if (_AUTO_PLUBLISHER) {
         // subscribe to the yolo topic
         ros::Subscriber bbsub = nh.subscribe(_YOLO_TOPIC, 1, callbackBB);
@@ -278,4 +285,6 @@ int main(int argc, char **argv) {
     ros::ServiceServer service = nh.advertiseService("get_3d_bounding_boxes", seviceCB);
     // run run run!
     ros::spin();
+
+    delete(tfl);
 }
