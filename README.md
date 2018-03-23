@@ -47,7 +47,7 @@ Lancer le launchfile avec
 Reçoit le depth de la camera et les cadres publiés par darknet. Retourne des boites en 3d sous forme de tf et de message.
 
 
-#### Topics Souscris
+#### Topics Souscris*
 
 * **`/head_xtion/depth/image`** ([sensor_msgs/Image])
 
@@ -57,7 +57,7 @@ Reçoit le depth de la camera et les cadres publiés par darknet. Retourne des b
 
 	Les cadres 2d retournés par darknet_ros
 
-#### Topics Publiés
+#### Topics Publiés*
 
 * **`/frame_to_box/bounding_boxes`** ([wm_frame_to_box/BoundingBoxes3D])
 
@@ -69,7 +69,9 @@ Reçoit le depth de la camera et les cadres publiés par darknet. Retourne des b
 
 	Recois une depth Image et une liste de BoundingBoxes2D.
 	- sara_msgs/BoundingBoxes2D boundingBoxes2D
-	- sensor_msgs/Image Image
+	- sensor_msgs/Image image
+	- string input_frame
+	- string output_frame
 	
 	Retourne une liste des BoundingBoxes3D
 	- sara_msgs/BoundingBoxes3D boundingBoxes3D
@@ -77,7 +79,7 @@ Reçoit le depth de la camera et les cadres publiés par darknet. Retourne des b
 #### Paramètres
 * **`auto_publisher`** (bool, default: true)
 
-	Largeur en radians de l'ouverture de la camera
+	Faut-il souscrire et publier automatiquement aux topic. Le service fonctionne quand même.
 	
 * **`camera_angle_width`** (float, default: 0.785398163397)
 
@@ -87,6 +89,14 @@ Reçoit le depth de la camera et les cadres publiés par darknet. Retourne des b
 
 	Hauteur en radians de l'ouverture de la camera
 
+* **`minimum_distance`** (float, default: 0.2)
+
+	Distance minimale accepté en (m)
+
+* **`maximum_distance`** (float, default: 50)
+
+	Distance maximum accepté en (m)
+	
 * **`camera_topic`** (string, default: "/head_xtion/depth/image_raw")
 
 	Topic où aller chercher le depth de la camera
@@ -98,6 +108,10 @@ Reçoit le depth de la camera et les cadres publiés par darknet. Retourne des b
 * **`base_frame`** (string, default: "base_link")
 
 	Frame tf de référence pour le message des boites 3d
+	
+* **`frame_ag`** (float, default: 0.0)
+
+	Temps de décalage en (s) dans le passé où regarder pour les tf.
 
 * **`yolo_topic`** (string, default: "/darknet_ros/bounding_boxes")
 
