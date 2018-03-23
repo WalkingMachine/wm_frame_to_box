@@ -242,7 +242,7 @@ int main(int argc, char **argv) {
 
     // get all parameters
     nh.param("auto_publisher", _AUTO_PLUBLISHER, bool(true));
-    ROS_INFO("base_frame = %s", _BASE_FRAME.c_str());
+    ROS_INFO("auto_publisher = %d", _AUTO_PLUBLISHER);
     nh.param("minimum_distance", _MIN_DIST, 0.2);
     ROS_INFO("minimum_distance = %lf", _MIN_DIST);
     nh.param("maximum_distance", _MAX_DIST, 50.0);
