@@ -266,15 +266,16 @@ int main(int argc, char **argv) {
     nh.param("base_frame", _BASE_FRAME, std::string("/base_link"));
     ROS_INFO("base_frame = %s", _BASE_FRAME.c_str());
 
-    // subscribe to the camera topic
-    image_transport::ImageTransport it(nh);
-    image_transport::Subscriber sub = it.subscribe(_CAMERA_TOPIC, 1, ImageCB);
-    LastImage = nullptr;
 
     // Initialise tf listener
     tfl = new tf::TransformListener(nh, ros::Duration(5) ,true);
 
     if (_AUTO_PLUBLISHER) {
+        // subscribe to the camera topic
+        image_transport::ImageTransport it(nh);
+        image_transport::Subscriber sub = it.subscribe(_CAMERA_TOPIC, 1, ImageCB);
+        LastImage = nullptr;
+
         // subscribe to the yolo topic
         ros::Subscriber bbsub = nh.subscribe(_YOLO_TOPIC, 1, callbackBB);
 
