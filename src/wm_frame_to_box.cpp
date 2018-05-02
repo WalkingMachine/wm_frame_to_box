@@ -10,6 +10,7 @@
 #include <darknet_ros_msgs/BoundingBoxes.h>
 #include <tf/transform_listener.h>
 #include <tf/message_filter.h>
+#include "visualization_msgs/Marker.h"
 
 darknet_ros_msgs::BoundingBoxes BoundingBoxes2D;
 
@@ -28,6 +29,7 @@ std::string _BASE_FRAME;
 cv_bridge::CvImagePtr LastImage;
 ros::Publisher posePub;
 tf::TransformListener *tfl;
+ros::Publisher markerPublisher;
 
 
 // Declare functions
@@ -191,6 +193,27 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         /*** Publish the boxes ***/
         posePub.publish(boxes);
 
+        {  // Publish visual box
+            visualization_msgs::Marker m;
+            m.header.stamp = ros::Time::now();
+            m.lifetime = ros::Duration(0.2);
+            m.header.frame_id = "/map";
+            m.ns = "Boxes";
+            m.id = ros::Time::now().toNSec();
+            m.type = m.CUBE;
+            m.pose.position.x = box.Center.x;
+            m.pose.position.y = box.Center.y;
+            m.pose.position.z = box.Center.z;
+            m.scale.x = box.Depth;
+            m.scale.y = box.Width;
+            m.scale.z = box.Height;
+            m.color.r = 0;
+            m.color.g = 1;
+            m.color.b = 0;
+            m.color.a = 0.2;
+            markerPublisher.publish(m);
+        }
+
     }
     return boxes.boundingBoxes;
 }
@@ -281,6 +304,8 @@ int main(int argc, char **argv) {
 
     // Initialise tf listener
     tfl = new tf::TransformListener(nh, ros::Duration(5) ,true);
+
+    markerPublisher = nh.advertise<visualization_msgs::Marker>("/boxes", 100);
 
     if (_AUTO_PLUBLISHER) {
         // subscribe to the camera topic
