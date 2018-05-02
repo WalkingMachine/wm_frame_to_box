@@ -135,31 +135,43 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         // get the IRL angles from the camera center to the object
         double ax = -((double) x - (double) Img->image.size.p[1] / 2) * xratio;  // pixel to angle
         double ay = -((double) y - (double) Img->image.size.p[0] / 2) * yratio;  // pixel to angle
+        double aw = -((double) xmax - (double) Img->image.size.p[1] / 2) * xratio;  // pixel to angle
+        double ah = -((double) ymax - (double) Img->image.size.p[0] / 2) * yratio;  // pixel to angle
 
         // Convert the angeles and distance to x y z coordinates
         double px{dist * std::cos(ax) * std::cos(ay)};  // ang to 3D point (rad to m)
         double py{dist * std::sin(ax)};  // ang to 3D point (rad to m)
         double pz{dist * std::sin(ay)};  // ang to 3D point (rad to m)
+        double pxwh{dist * std::cos(aw) * std::cos(ah)};  // ang to 3D point (rad to m)
+        double pywh{dist * std::sin(aw)};  // ang to 3D point (rad to m)
+        double pzwh{dist * std::sin(ah)};  // ang to 3D point (rad to m)
+
 
         /*** TF frame transformation ***/
-        // Create the tf point
-        tf::Stamped<tf::Vector3> loc;
-        loc.frame_id_ = input_frame;  // Reference frame
-        loc.setY(py);
-        loc.setZ(pz);
-        loc.setX(px);
 
-        // Apply transformation to the new reference frame
+        // Wait for the availability of the transformation
+        tf::Stamped<tf::Vector3> loc;
         ros::Time past{ros::Time::now()-ros::Duration(_FRAME_LAG)};
         loc.stamp_ = past;
         tfl->waitForTransform(output_frame, input_frame, past, ros::Duration(1.0));
-        tfl->transformPoint(output_frame, loc, loc );
 
-        // Generate the center of the box
+        // Create the tf point
+        loc.frame_id_ = input_frame;  // Reference frame
+
+        // Apply transformation to the new reference frame and Generate the center of the box
+        loc.setX(px); loc.setY(py); loc.setZ(pz);
+        tfl->transformPoint(output_frame, loc, loc );
         geometry_msgs::Point po;
-        po.x = loc.x();
-        po.y = loc.y();
-        po.z = loc.z();
+        po.x = loc.x(); po.y = loc.y(); po.z = loc.z();
+
+        // Apply transformation to the new reference frame and Generate the dimentions of the box
+        loc.setX(pxwh); loc.setY(pywh); loc.setZ(pzwh);
+        tfl->transformPoint(output_frame, loc, loc );
+        geometry_msgs::Point dims;
+        dims.x = loc.x()-po.x;
+        dims.y = loc.y()-po.y;
+        dims.z = loc.z()-po.z;
+
 
         /*** Create the box ***/
         // create a box message and fill all the parameters
@@ -168,9 +180,9 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         box.Center = po;
 
         // set the dimentions of the box
-        box.Depth = _DEFAULT_BOX_SIZE;
-        box.Width = _DEFAULT_BOX_SIZE;
-        box.Height = _DEFAULT_BOX_SIZE;
+        box.Depth = dims.x;
+        box.Width = dims.y;
+        box.Height = dims.z;
         box.probability = BBs[i].probability;
 
         // Add the box to the list of boxes
