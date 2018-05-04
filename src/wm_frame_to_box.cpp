@@ -25,6 +25,7 @@ double _MIN_DIST;
 double _MAX_DIST;
 double _DEFAULT_BOX_SIZE;
 double _FRAME_LAG;
+int _NBSAMPLES{10};
 std::string _BASE_FRAME;
 cv_bridge::CvImagePtr LastImage;
 ros::Publisher posePub;
@@ -72,8 +73,48 @@ std::vector<darknet_ros_msgs::BoundingBox> ConvertBB(std::vector<sara_msgs::Boun
  * @return depth    depth of the point
  */
 double GetDepth(int x, int y, const cv_bridge::CvImagePtr cv_ptr) {
+    // apply limitations
+    if (x < 0) x = 0;
+    if (x > cv_ptr->image.size.p[1]) x = cv_ptr->image.size.p[1];
+    if (y < 0) y = 0;
+    if (y > cv_ptr->image.size.p[0]) y = cv_ptr->image.size.p[0];
+
     int depth = cv_ptr->image.at<short int>(y, x);
     return depth / 1000.0;
+}
+
+
+/**
+ * Give an estimation of the objects distance
+ * @param x 		center x position
+ * @param x 		center y position
+ * @param cv_ptr    pointer to the depth image
+ * @return distance depth of the point
+ */
+double GetMedDist(int xmin, int xmax, int ymin, int ymax, const cv_bridge::CvImagePtr cv_ptr) {
+
+    int x{(xmin+xmax)/2};
+    int y{(ymin+ymax)/2};
+
+    int width{(xmax-xmin)/4};
+    int height{(ymax-ymin)/4};
+
+    double med{0};
+    int nbSamples{0};
+
+    for ( int i = 0 ;i < _NBSAMPLES; ++i){
+        double dist{GetDepth(int(x+(cos(i)*i*width/_NBSAMPLES)), int(y+(sin(i)*i*height/_NBSAMPLES)), cv_ptr)};
+        if (dist > _MIN_DIST){
+            med += dist;
+            nbSamples++;
+        }
+    }
+    if (nbSamples == 0)
+        return 0;
+
+    med /= nbSamples;
+
+    return med;
 }
 
 
@@ -112,12 +153,7 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         int x = (xmax + xmin) / 2;
         int y = (ymax + ymin) / 2;
 
-        // apply limitations
-        if (x < 0) x = 0;
-        if (x > Img->image.size.p[1]) x = Img->image.size.p[1];
-        if (y < 0) y = 0;
-        if (y > Img->image.size.p[0]) y = Img->image.size.p[0];
-        double dist = GetDepth(x, y, Img);
+        double dist = GetMedDist(xmin, xmax, ymin, ymax, Img);
 
         // add a 5 cm offset to compensate depth
         dist += 0.05;
@@ -157,22 +193,21 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         loc.stamp_ = past;
         tfl->waitForTransform(output_frame, input_frame, past, ros::Duration(1.0));
 
-        // Create the tf point
-        loc.frame_id_ = input_frame;  // Reference frame
 
         // Apply transformation to the new reference frame and Generate the center of the box
+        loc.frame_id_ = input_frame;  // Reference frame
         loc.setX(px); loc.setY(py); loc.setZ(pz);
         tfl->transformPoint(output_frame, loc, loc );
         geometry_msgs::Point po;
         po.x = loc.x(); po.y = loc.y(); po.z = loc.z();
 
         // Apply transformation to the new reference frame and Generate the dimentions of the box
+        loc.frame_id_ = input_frame;  // Reference frame
         loc.setX(pxwh); loc.setY(pywh); loc.setZ(pzwh);
         tfl->transformPoint(output_frame, loc, loc );
         geometry_msgs::Point dims;
-        dims.x = loc.x()-po.x;
-        dims.y = loc.y()-po.y;
-        dims.z = loc.z()-po.z;
+        double radius{sqrt(pow(loc.x()-po.x, 2) + pow(loc.y()-po.y,2))};
+        dims.x = radius*2; dims.y = radius*2; dims.z = (loc.z()-po.z)*2;
 
 
         /*** Create the box ***/
@@ -196,7 +231,7 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         {  // Publish visual box
             visualization_msgs::Marker m;
             m.header.stamp = ros::Time::now();
-            m.lifetime = ros::Duration(0.2);
+            m.lifetime = ros::Duration(0.1);
             m.header.frame_id = "/map";
             m.ns = "Boxes";
             m.id = ros::Time::now().toNSec();
@@ -277,29 +312,18 @@ int main(int argc, char **argv) {
 
     // get all parameters
     nh.param("auto_publisher", _AUTO_PLUBLISHER, bool(true));
-    ROS_INFO("auto_publisher = %d", _AUTO_PLUBLISHER);
     nh.param("minimum_distance", _MIN_DIST, 0.2);
-    ROS_INFO("minimum_distance = %lf", _MIN_DIST);
     nh.param("maximum_distance", _MAX_DIST, 50.0);
-    ROS_INFO("maximum_distance = %lf", _MAX_DIST);
     nh.param("frame_lag", _FRAME_LAG, 0.0);
-    ROS_INFO("frame_lag = %lf", _FRAME_LAG);
     nh.param("camera_angle_width", _CAMERA_ANGLE_WIDTH, 1.012290966);
-    ROS_INFO("camera_angle_width = %f", _CAMERA_ANGLE_WIDTH);
     nh.param("camera_angle_height", _CAMERA_ANGLE_HEIGHT, 0.785398163397);
-    ROS_INFO("camera_angle_height = %f", _CAMERA_ANGLE_HEIGHT);
     nh.param("camera_topic", _CAMERA_TOPIC, std::string("/head_xtion/depth/image_raw"));
-    ROS_INFO("camera_topic = %s", _CAMERA_TOPIC.c_str());
     nh.param("yolo_topic", _YOLO_TOPIC, std::string("/darknet_ros/bounding_boxes"));
-    ROS_INFO("yolo_topic = %s", _YOLO_TOPIC.c_str());
     nh.param("bounding_boxes_topic", _BOUNDING_BOXES_TOPIC, std::string("/frame_to_box/bounding_boxes"));
-    ROS_INFO("bounding_boxes_topic = %s", _BOUNDING_BOXES_TOPIC.c_str());
     nh.param("default_box_size", _DEFAULT_BOX_SIZE, 0.1);
-    ROS_INFO("default_box_size = %f", _DEFAULT_BOX_SIZE);
     nh.param("camera_frame", _CAMERA_FRAME, std::string("head_xtion_depth_frame"));
-    ROS_INFO("camera_frame = %s", _CAMERA_FRAME.c_str());
     nh.param("base_frame", _BASE_FRAME, std::string("/base_link"));
-    ROS_INFO("base_frame = %s", _BASE_FRAME.c_str());
+    nh.param("nb_samples", _NBSAMPLES, 10);
 
 
     // Initialise tf listener
