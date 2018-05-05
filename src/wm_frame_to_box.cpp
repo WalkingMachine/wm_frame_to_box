@@ -22,7 +22,6 @@ bool _AUTO_PLUBLISHER;
 double _MIN_DIST;
 double _MAX_DIST;
 double _DEFAULT_BOX_SIZE;
-double _FRAME_LAG;
 int _NBSAMPLES{10};
 std::string _BASE_FRAME;
 cv_bridge::CvImagePtr LastImage;
@@ -185,12 +184,10 @@ get_BB(cv_bridge::CvImagePtr Img, darknet_ros_msgs::BoundingBoxes BBs, std::stri
 
 
         /*** TF frame transformation ***/
-
         // Wait for the availability of the transformation
         tf::Stamped<tf::Vector3> loc;
-        ros::Time past{ros::Time::now()-ros::Duration(_FRAME_LAG)};
-        loc.stamp_ = past;
-        tfl->waitForTransform(output_frame, input_frame, past, ros::Duration(1.0));
+        loc.stamp_ = BBs.header.stamp;
+        tfl->waitForTransform(output_frame, input_frame, BBs.header.stamp, ros::Duration(1.0));
 
 
         // Apply transformation to the new reference frame and Generate the center of the box
@@ -313,7 +310,6 @@ int main(int argc, char **argv) {
     nh.param("auto_publisher", _AUTO_PLUBLISHER, bool(true));
     nh.param("minimum_distance", _MIN_DIST, 0.2);
     nh.param("maximum_distance", _MAX_DIST, 50.0);
-    nh.param("frame_lag", _FRAME_LAG, 0.0);
     nh.param("camera_angle_width", _CAMERA_ANGLE_WIDTH, 1.012290966);
     nh.param("camera_angle_height", _CAMERA_ANGLE_HEIGHT, 0.785398163397);
     nh.param("camera_topic", _CAMERA_TOPIC, std::string("/head_xtion/depth/image_raw"));
