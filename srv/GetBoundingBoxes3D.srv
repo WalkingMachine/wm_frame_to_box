@@ -1,6 +1,6 @@
-sara_msgs/BoundingBox2D[] boundingBoxes2D
+sara_msgs/BoundingBoxes2D boundingBoxes2D
 sensor_msgs/Image image
 string input_frame
 string output_frame
 ---
-sara_msgs/BoundingBox3D[] boundingBoxes3D
+sara_msgs/BoundingBoxes3D boundingBoxes3D

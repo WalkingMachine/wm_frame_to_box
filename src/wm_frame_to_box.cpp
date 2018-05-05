@@ -4,8 +4,6 @@
 
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
-#include "sara_msgs/BoundingBoxes2D.h"
-#include "sara_msgs/BoundingBoxes3D.h"
 #include "wm_frame_to_box/GetBoundingBoxes3D.h"
 #include <darknet_ros_msgs/BoundingBoxes.h>
 #include <tf/transform_listener.h>
@@ -36,8 +34,8 @@ ros::Publisher markerPublisher;
 // Declare functions
 std::vector<darknet_ros_msgs::BoundingBox> ConvertBB(std::vector<sara_msgs::BoundingBox2D> DBBs);
 double GetDepth(int x, int y, const cv_bridge::CvImagePtr cv_ptr);
-std::vector<sara_msgs::BoundingBox3D>
-get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs, std::string input_frame, std::string output_frame);
+sara_msgs::BoundingBoxes3D
+get_BB(cv_bridge::CvImagePtr Img, darknet_ros_msgs::BoundingBoxes BBs, std::string input_frame, std::string output_frame);
 void callbackBB(darknet_ros_msgs::BoundingBoxes msg);
 void ImageCB(const sensor_msgs::ImageConstPtr &msg);
 bool seviceCB(wm_frame_to_box::GetBoundingBoxes3D::Request &req, wm_frame_to_box::GetBoundingBoxes3D::Response &resp);
@@ -50,9 +48,9 @@ bool seviceCB(wm_frame_to_box::GetBoundingBoxes3D::Request &req, wm_frame_to_box
  * @param DBBs 		sara bounding boxes
  * @return BBsOut 	Darknet bounding boxes
  */
-std::vector<darknet_ros_msgs::BoundingBox> ConvertBB(std::vector<sara_msgs::BoundingBox2D> DBBs) {
-    std::vector<darknet_ros_msgs::BoundingBox> BBsOut;
-    for (auto DBB : DBBs) {
+darknet_ros_msgs::BoundingBoxes ConvertBB(sara_msgs::BoundingBoxes2D DBBs) {
+    darknet_ros_msgs::BoundingBoxes BBsOut;
+    for (auto DBB : DBBs.boundingBoxes) {
         darknet_ros_msgs::BoundingBox BBOut;
         BBOut.Class = DBB.Class;
         BBOut.probability = DBB.probability;
@@ -60,8 +58,9 @@ std::vector<darknet_ros_msgs::BoundingBox> ConvertBB(std::vector<sara_msgs::Boun
         BBOut.xmin = DBB.xmin;
         BBOut.ymax = DBB.ymax;
         BBOut.ymin = DBB.ymin;
-        BBsOut.push_back(BBOut);
+        BBsOut.boundingBoxes.push_back(BBOut);
     }
+    BBsOut.header = DBBs.header;
     return BBsOut;
 }
 
@@ -124,8 +123,8 @@ double GetMedDist(int xmin, int xmax, int ymin, int ymax, const cv_bridge::CvIma
  * @param BBs		2D bounding boxes
  * @return boxes    3D bounding boxes
  */
-std::vector<sara_msgs::BoundingBox3D>
-get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs, std::string input_frame, std::string output_frame) {
+sara_msgs::BoundingBoxes3D
+get_BB(cv_bridge::CvImagePtr Img, darknet_ros_msgs::BoundingBoxes BBs, std::string input_frame, std::string output_frame) {
 
     if (input_frame == "")
         input_frame = _CAMERA_FRAME;
@@ -136,18 +135,18 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
     boxes = sara_msgs::BoundingBoxes3D();
 
     if (tfl == nullptr)
-        return boxes.boundingBoxes;
+        return boxes;
 
-    ulong L = BBs.size();
+    ulong L = BBs.boundingBoxes.size();
     if (L == 0)
-        return boxes.boundingBoxes;
+        return boxes;
 
     for (ulong i = 0; i < L; i++) {
         // get frame
-        int xmin = BBs[i].xmin;
-        int xmax = BBs[i].xmax;
-        int ymin = BBs[i].ymin;
-        int ymax = BBs[i].ymax;
+        int xmin = BBs.boundingBoxes[i].xmin;
+        int xmax = BBs.boundingBoxes[i].xmax;
+        int ymin = BBs.boundingBoxes[i].ymin;
+        int ymax = BBs.boundingBoxes[i].ymax;
 
         // get center
         int x = (xmax + xmin) / 2;
@@ -160,10 +159,10 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
 
         // filter invalid falues
         if (dist < _MIN_DIST || dist > _MAX_DIST){
-            BBs[i].probability = 0;
+            BBs.boundingBoxes[i].probability = 0;
             dist = 0.2;
         }
-        ROS_INFO("%s dist: %lf prob: %lf", BBs[i].Class.data(), dist, BBs[i].probability);
+        ROS_INFO("%s dist: %lf prob: %lf", BBs.boundingBoxes[i].Class.data(), dist, BBs.boundingBoxes[i].probability);
 
 
         // get pixel to rad ratio // TODO check if the dimentions are right
@@ -213,14 +212,14 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         /*** Create the box ***/
         // create a box message and fill all the parameters
         sara_msgs::BoundingBox3D box;
-        box.Class = BBs[i].Class;
+        box.Class = BBs.boundingBoxes[i].Class;
         box.Center = po;
 
         // set the dimentions of the box
         box.Depth = dims.x;
         box.Width = dims.y;
         box.Height = dims.z;
-        box.probability = BBs[i].probability;
+        box.probability = BBs.boundingBoxes[i].probability;
 
         // Add the box to the list of boxes
         boxes.boundingBoxes.push_back(box);
@@ -234,7 +233,7 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
             m.lifetime = ros::Duration(0.1);
             m.header.frame_id = "/map";
             m.ns = "Boxes";
-            m.id = ros::Time::now().toNSec();
+            m.id = ros::Time::now().toNSec()+int(box.probability*1000);
             m.type = m.CUBE;
             m.pose.position.x = box.Center.x;
             m.pose.position.y = box.Center.y;
@@ -250,7 +249,7 @@ get_BB(cv_bridge::CvImagePtr Img, std::vector<darknet_ros_msgs::BoundingBox> BBs
         }
 
     }
-    return boxes.boundingBoxes;
+    return boxes;
 }
 
 
@@ -265,7 +264,7 @@ void callbackBB(darknet_ros_msgs::BoundingBoxes msg) {
     }
     try {
         sara_msgs::BoundingBoxes3D boxes3D;
-        boxes3D.boundingBoxes = get_BB(LastImage, msg.boundingBoxes, "", "");
+        boxes3D = get_BB(LastImage, msg, "", "");
         posePub.publish(boxes3D);
     }catch (std::string exeption) {
         ROS_ERROR("callack error");
