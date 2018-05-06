@@ -246,6 +246,7 @@ get_BB(cv_bridge::CvImagePtr Img, darknet_ros_msgs::BoundingBoxes BBs, std::stri
         }
 
     }
+    boxes.header = BBs.header;
     return boxes;
 }
 
