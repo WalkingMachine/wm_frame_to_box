@@ -18,7 +18,7 @@ std::string _CAMERA_TOPIC;
 std::string _YOLO_TOPIC;
 std::string _CAMERA_FRAME;
 std::string _BOUNDING_BOXES_TOPIC;
-bool _AUTO_PLUBLISHER;
+bool _AUTO_PLUBLISHER{false};
 double _MIN_DIST;
 double _MAX_DIST;
 double _DEFAULT_BOX_SIZE;
@@ -28,6 +28,7 @@ cv_bridge::CvImagePtr LastImage;
 ros::Publisher posePub;
 tf::TransformListener *tfl;
 ros::Publisher markerPublisher;
+bool _PUBLISH_MARKERS{false};
 
 
 // Declare functions
@@ -222,9 +223,7 @@ get_BB(cv_bridge::CvImagePtr Img, darknet_ros_msgs::BoundingBoxes BBs, std::stri
         boxes.boundingBoxes.push_back(box);
 
         /*** Publish the boxes ***/
-        posePub.publish(boxes);
-
-        {  // Publish visual box
+        if (_PUBLISH_MARKERS){  // Publish visual box
             visualization_msgs::Marker m;
             m.header.stamp = ros::Time::now();
             m.lifetime = ros::Duration(0.1);
@@ -308,7 +307,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
 
     // get all parameters
-    nh.param("auto_publisher", _AUTO_PLUBLISHER, bool(true));
+    nh.param("auto_publisher", _AUTO_PLUBLISHER, false);
     nh.param("minimum_distance", _MIN_DIST, 0.2);
     nh.param("maximum_distance", _MAX_DIST, 50.0);
     nh.param("camera_angle_width", _CAMERA_ANGLE_WIDTH, 1.012290966);
@@ -320,7 +319,7 @@ int main(int argc, char **argv) {
     nh.param("camera_frame", _CAMERA_FRAME, std::string("head_xtion_depth_frame"));
     nh.param("base_frame", _BASE_FRAME, std::string("/base_link"));
     nh.param("nb_samples", _NBSAMPLES, 10);
-
+    nh.param("publish_markers", _PUBLISH_MARKERS, false);
 
     // Initialise tf listener
     tfl = new tf::TransformListener(nh, ros::Duration(5) ,true);
