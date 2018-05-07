@@ -4,8 +4,8 @@
 
     <param name="minimum_distance"      type="double"   value="0.5" />
     <param name="maximum_distance"      type="double"   value="20" />
-    <param name="frame_lag"             type="double"   value="0.25" />
     <param name="auto_publisher"        type="bool"     value="false" />
+    <param name="publish_markers"       type="bool"     value="false" />
     <param name="camera_topic"          type="string"   value="/head_xtion/depth/image_raw" />
     <param name="camera_frame"          type="string"   value="head_xtion_depth_frame" />
     <param name="base_frame"            type="string"   value="base_link" />
@@ -14,6 +14,7 @@
     <param name="yolo_topic"            type="string"   value="/darknet_ros/bounding_boxes" />
     <param name="bounding_boxes_topic"  type="string"   value="/frame_to_boxes/bounding_boxes" />
     <param name="default_box_size"      type="double"   value="0.1" />
+    <param name="nb_samples"            type="int"      value="10" />
     <node name="frame_to_box" pkg="wm_frame_to_box" type="wm_frame_to_box" output="screen"/>
 
 </launch>
