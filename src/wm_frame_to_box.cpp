@@ -228,7 +228,7 @@ get_BB(cv_bridge::CvImagePtr Img, darknet_ros_msgs::BoundingBoxes BBs, std::stri
             m.header.stamp = ros::Time::now();
             m.lifetime = ros::Duration(0.1);
             m.header.frame_id = "/map";
-            m.ns = "Boxes";
+            m.ns = box.Class;
             m.id = ros::Time::now().toNSec()+int(box.probability*1000);
             m.type = m.CUBE;
             m.pose.position.x = box.Center.x;
