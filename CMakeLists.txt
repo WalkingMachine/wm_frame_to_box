@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
         tf_conversions
         eigen_conversions
         image_transport
-        darknet_ros_msgs
         cv_bridge
         sara_msgs
         )
