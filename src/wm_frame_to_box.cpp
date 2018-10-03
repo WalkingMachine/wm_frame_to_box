@@ -148,12 +148,12 @@ get_BB(cv_bridge::CvImagePtr Img, sara_msgs::BoundingBoxes2D BBs, std::string in
         double ah = -((double) ymax - (double) Img->image.size.p[0] / 2) * yratio;  // pixel to angle
 
         // Convert the angeles and distance to x y z coordinates
-        double px{dist * std::cos(ax) * std::cos(ay)};  // ang to 3D point (rad to m)
-        double py{dist * std::sin(ax)};  // ang to 3D point (rad to m)
-        double pz{dist * std::sin(ay)};  // ang to 3D point (rad to m)
-        double pxwh{dist * std::cos(aw) * std::cos(ah)};  // ang to 3D point (rad to m)
-        double pywh{dist * std::sin(aw)};  // ang to 3D point (rad to m)
-        double pzwh{dist * std::sin(ah)};  // ang to 3D point (rad to m)
+        double pz{dist * std::cos(ax) * std::cos(ay)};  // ang to 3D point (rad to m)
+        double px{-dist * std::sin(ax)};  // ang to 3D point (rad to m)
+        double py{-dist * std::sin(ay)};  // ang to 3D point (rad to m)
+        double pzwh{dist * std::cos(aw) * std::cos(ah)};  // ang to 3D point (rad to m)
+        double pxwh{-dist * std::sin(aw)};  // ang to 3D point (rad to m)
+        double pywh{-dist * std::sin(ah)};  // ang to 3D point (rad to m)
 
 
         /*** TF frame transformation ***/
