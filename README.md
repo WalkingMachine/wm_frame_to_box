@@ -19,7 +19,7 @@ Affiliation: Club étudiant Walking Machine, ÉTS**
 
 - [Robot Operating System (ROS)](http://wiki.ros.org) (middleware pour la robotique),
 - [sara_msg](https://github.com/WalkingMachine/sara_msgs) (repo pour les messages utilisé par sara),
-- [darknet_ros](https://github.com/leggedrobotics/darknet_ros) (package de darknet fait par leggedrobotics),
+- [darknet_ros](https://github.com/WalkingMachine/darknet_ros) (package de darknet fait par leggedrobotics),
 - [Openni] (camera 3d)
 - [Open_cv] (vision artificielle)
 
