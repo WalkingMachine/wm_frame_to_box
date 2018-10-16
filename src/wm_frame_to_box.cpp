@@ -160,7 +160,7 @@ get_BB(cv_bridge::CvImagePtr Img, sara_msgs::BoundingBoxes2D BBs, std::string in
         // Wait for the availability of the transformation
         tf::Stamped<tf::Vector3> loc;
         loc.stamp_ = BBs.header.stamp;
-        tfl->waitForTransform(output_frame, input_frame, BBs.header.stamp, ros::Duration(1.0));
+        tfl->waitForTransform(output_frame, input_frame, BBs.header.stamp, ros::Duration(0.01));
 
 
         // Apply transformation to the new reference frame and Generate the center of the box
@@ -294,7 +294,7 @@ int main(int argc, char **argv) {
     nh.param("publish_markers", _PUBLISH_MARKERS, false);
 
     // Initialise tf listener
-    tfl = new tf::TransformListener(nh, ros::Duration(5) ,true);
+    tfl = new tf::TransformListener(nh, ros::Duration(20) ,true);
 
     markerPublisher = nh.advertise<visualization_msgs::Marker>("/boxes", 100);
 
