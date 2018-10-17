@@ -19,7 +19,6 @@ Affiliation: Club étudiant Walking Machine, ÉTS**
 
 - [Robot Operating System (ROS)](http://wiki.ros.org) (middleware pour la robotique),
 - [sara_msg](https://github.com/WalkingMachine/sara_msgs) (repo pour les messages utilisé par sara),
-- [darknet_ros](https://github.com/WalkingMachine/darknet_ros) (package de darknet fait par leggedrobotics),
 - [Openni] (camera 3d)
 - [Open_cv] (vision artificielle)
 
@@ -44,7 +43,7 @@ Lancer le launchfile avec
 
 ### frame_to_box
 
-Reçoit le depth de la camera et les cadres publiés par darknet. Retourne des boites en 3d sous forme de tf et de message.
+Reçoit le depth de la camera et les cadres 2D. Retourne des boites en 3D.
 
 
 #### Topics Souscris*
@@ -55,7 +54,7 @@ Reçoit le depth de la camera et les cadres publiés par darknet. Retourne des b
 
 * **`/darknet_ros/bounding_boxes`** ([darknet_ros_msgs/BoundingBoxes])
 
-	Les cadres 2d retournés par darknet_ros
+	Les cadres 2D
 
 #### Topics Publiés*
 
@@ -128,6 +127,5 @@ Reçoit le depth de la camera et les cadres publiés par darknet. Retourne des b
 
 [ROS]: http://www.ros.org
 [rviz]: http://wiki.ros.org/rviz
-[darknet_ros]: https://github.com/leggedrobotics/darknet_ros
 [opencv]: http://wiki.ros.org/opencv3
 [readme template]: https://github.com/ethz-asl/ros_best_practices/blob/master/ros_package_template/README.md
