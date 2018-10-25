@@ -163,17 +163,30 @@ get_BB(cv_bridge::CvImagePtr Img, sara_msgs::BoundingBoxes2D BBs, std::string in
         tfl->waitForTransform(output_frame, input_frame, BBs.header.stamp, ros::Duration(0.01));
 
 
-        // Apply transformation to the new reference frame and Generate the center of the box
+        /*** Apply transformation to the new reference frame and Generate the center of the box. ***/
         loc.frame_id_ = input_frame;  // Reference frame
         loc.setX(px); loc.setY(py); loc.setZ(pz);
-        tfl->transformPoint(output_frame, loc, loc );
+        try{
+            tfl->transformPoint(output_frame, loc, loc );
+        } catch(tf2::ExtrapolationException exce){
+            ROS_WARN(exce.what());
+            BBs.boundingBoxes[i].probability = 0;
+        }
+        // Get the center
         geometry_msgs::Point po;
         po.x = loc.x(); po.y = loc.y(); po.z = loc.z();
 
-        // Apply transformation to the new reference frame and Generate the dimentions of the box
+
+        /*** Apply transformation to the new reference frame and Generate the dimentions of the box. ***/
         loc.frame_id_ = input_frame;  // Reference frame
         loc.setX(pxwh); loc.setY(pywh); loc.setZ(pzwh);
-        tfl->transformPoint(output_frame, loc, loc );
+        try{
+            tfl->transformPoint(output_frame, loc, loc );
+        } catch(tf2::ExtrapolationException exce){
+            ROS_WARN(exce.what());
+            BBs.boundingBoxes[i].probability = 0;
+        }
+        // Calculate the shape of the box.
         geometry_msgs::Point dims;
         double radius{sqrt(pow(loc.x()-po.x, 2) + pow(loc.y()-po.y,2))};
         dims.x = radius*2; dims.y = radius*2; dims.z = (loc.z()-po.z)*2;
