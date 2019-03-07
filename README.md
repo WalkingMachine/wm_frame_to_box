@@ -105,7 +105,7 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 * **Philippe La Madeleine** - *Initial work* - [Philippe117](https://github.com/Philippe117)
 
-See also the list of [contributors](https://github.com/walkingmahcine/wm_frame_to_box/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/walkingmachine/wm_frame_to_box/contributors) who participated in this project.
 
 ## License
 
