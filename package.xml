@@ -3,13 +3,12 @@
   <name>wm_frame_to_box</name>
   <version>0.3.0</version>
   <description>
-    take a frame rom a 2d image and depth from camera and turn them into a 3d box
+    ROS node receiving 2D bounding boxes from YOLO v2 (ROS wrapper) and convert them to 3D bounding boxes using camera depthcloud
   </description>
   <author email="philippe117@live.fr">Philippe La Madeleine</author>
   <maintainer email="philippe117@live.fr">Philippe La Madeleine</maintainer>
 
   <license>BSD</license>
-
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
