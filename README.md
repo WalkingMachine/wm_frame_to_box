@@ -1,131 +1,112 @@
 # wm_frame_to_box
 
-## Description
+ROS node receiving 2D bounding boxes from YOLO v2 (ROS wrapper) and convert them to 3D bounding boxes using camera depthcloud
 
-Node recevant des cadres et les convertissant en boites à l'aide du depth de la camera
+## Getting Started
 
-Testé pour fonctionner avec [ROS] kinetic et Ubuntu 16.04. Le code risque de changer à certain moments.
-La licence du code source est [MIT license](LICENSE).
+* ```cd catkin_workspace/src```    
+* ```git clone```  
+* ```git@github.com:WalkingMachine/wm_frame_to_box.git```    
+* ```cd ../```      
+* ```catkin_make```
+* ```roslaunch wm_frame_to_box wm_frame_to_box.launch```
 
-**Auteur(s): Philippe La Madeleine
-Mainteneur: Philippe La Madeleine  
-Affiliation: Club étudiant Walking Machine, ÉTS**
+### Prerequisites
 
-## Installation
-
-### Buildé de la source
-
-#### Dépendances
-
-- [Robot Operating System (ROS)](http://wiki.ros.org) (middleware pour la robotique),
-- [sara_msg](https://github.com/WalkingMachine/sara_msgs) (repo pour les messages utilisé par sara),
-- [Openni] (camera 3d)
-- [Open_cv] (vision artificielle)
-
-
-#### Building
-
-Pour build de la source, clonez la dernière version de ce repo dans votre workspace et compilez avec
-
-	cd catkin_workspace/src
-	git clone git@github.com:WalkingMachine/wm_frame_to_box.git
-	cd ../
-	catkin_make
-
-## Utilisation
-
-Lancer le launchfile avec
-
-	roslaunch wm_frame_to_box wm_frame_to_box.launch
+* Ubuntu 16.04
+* ROS Kinetic
+* Openni
+* OpenCV
+* [cv_bridge](http://wiki.ros.org/cv_bridge)
+* [sara_msgs](https://github.com/WalkingMachine/sara_msgs)
+* [YOLO v2 for ROS](https://github.com/WalkingMachine/darknet_ros)
 
 
-## Nodes
+### Subscribed topics
 
-### frame_to_box
+* **`/head_xtion/depth/image`** [sensor_msgs/Image]
 
-Reçoit le depth de la camera et les cadres 2D. Retourne des boites en 3D.
+	Depth camera topic.
+
+* **`/darknet_ros/bounding_boxes`** [darknet_ros_msgs/BoundingBoxes]
+
+	Darknet 2D bounding boxes topic.
+
+### Published topics
+
+* **`/frame_to_box/bounding_boxes`** [wm_frame_to_box/BoundingBoxes3D]
+
+	3D bounding boxes published topic.
+
+### Services
+* **[`/frame_to_box/GetBoundingBoxes3D`](https://github.com/WalkingMachine/wm_frame_to_box/blob/master/srv/GetBoundingBoxes3D.srv)**
 
 
-#### Topics Souscris*
 
-* **`/head_xtion/depth/image`** ([sensor_msgs/Image])
-
-	L'image de profondeur de la camera 3d.
-
-* **`/darknet_ros/bounding_boxes`** ([darknet_ros_msgs/BoundingBoxes])
-
-	Les cadres 2D
-
-#### Topics Publiés*
-
-* **`/frame_to_box/bounding_boxes`** ([wm_frame_to_box/BoundingBoxes3D])
-
-	Les boites 3d obtenues
-
-#### Service
-
-* **`/frame_to_box/GetBoundingBoxes3D`** ([wm_frame_to_box/GetBoundingBoxes3D])
-
-	Recois une depth Image et une liste de BoundingBoxes2D.
-	- sara_msgs/BoundingBoxes2D boundingBoxes2D
-	- sensor_msgs/Image image
-	- string input_frame
-	- string output_frame
-	
-	Retourne une liste des BoundingBoxes3D
-	- sara_msgs/BoundingBoxes3D boundingBoxes3D
-
-#### Paramètres
+### Parameters
 * **`auto_publisher`** (bool, default: true)
 
-	Faut-il souscrire et publier automatiquement aux topic. Le service fonctionne quand même.
-	
+	Auto-publish to the topics.
+
 * **`camera_angle_width`** (float, default: 0.785398163397)
 
-	Largeur en radians de l'ouverture de la camera
+	Camera angle of view width in rad.
 
 * **`camera_angle_height`** (float, default: 0.785398163397)
 
-	Hauteur en radians de l'ouverture de la camera
+	Camera angle of view height in rad.
 
 * **`minimum_distance`** (float, default: 0.2)
 
-	Distance minimale accepté en (m)
+	Bounding boxes minimum distance in meters.
 
 * **`maximum_distance`** (float, default: 50)
 
-	Distance maximum accepté en (m)
-	
+	Bounding boxes maximum distance in meters.
+
 * **`camera_topic`** (string, default: "/head_xtion/depth/image_raw")
 
-	Topic où aller chercher le depth de la camera
+	Depth camera topic.
 
 * **`camera_frame`** (string, default: "head_xtion_depth_frame")
 
-	Frame tf de la camera
+	Depth camera tf frame.
 
 * **`base_frame`** (string, default: "base_link")
 
-	Frame tf de référence pour le message des boites 3d
-	
+	Reference base frame.
+
 * **`frame_ag`** (float, default: 0.0)
 
-	Temps de décalage en (s) dans le passé où regarder pour les tf.
+	Time shift to look for bounding boxes tf.
 
 * **`yolo_topic`** (string, default: "/darknet_ros/bounding_boxes")
 
-	Topic où aller chercher les cadres de darknet
+	Darknet 2D bounding boxes topic.
 
 * **`bounding_boxes_topic`** (string, default: "/frame_to_boxes/bounding_boxes")
 
-	Topic où publier les boites 3d
+	3D bounding boxes published topic.
 
 * **`default_box_size`** (float, default: 0.1)
 
-	Dimensions standards des boites
-  
+	Bounding boxes default size
 
-[ROS]: http://www.ros.org
-[rviz]: http://wiki.ros.org/rviz
-[opencv]: http://wiki.ros.org/opencv3
-[readme template]: https://github.com/ethz-asl/ros_best_practices/blob/master/ros_package_template/README.md
+
+## Contributing
+
+Please read [CONTRIBUTING.md](https://github.com/walkingmachine/wm_frame_to_box/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+
+## Versioning
+
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/WalkingMachine/wm_frame_to_box/tags).
+
+## Authors
+
+* **Philippe La Madeleine** - *Initial work* - [Philippe117](https://github.com/Philippe117)
+
+See also the list of [contributors](https://github.com/walkingmahcine/wm_frame_to_box/contributors) who participated in this project.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
