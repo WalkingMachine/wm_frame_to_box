@@ -2,12 +2,11 @@
 
 ## Description
 
-Node recevant des cadres et les convertissant en boites à l'aide du depth de la camera
+ROS node receiving 2D bounding boxes and convert them to 3D bounding boxes using camera depthcloud
 
-Testé pour fonctionner avec [ROS] kinetic et Ubuntu 16.04. Le code risque de changer à certain moments.
-La licence du code source est [MIT license](LICENSE).
+Tested to work with [ROS] kinetic and Ubuntu 16.04. This code may change in time and is licensed under [MIT license](LICENSE).
 
-**Auteur(s): Philippe La Madeleine
+**Author(s): Philippe La Madeleine
 Mainteneur: Philippe La Madeleine  
 Affiliation: Club étudiant Walking Machine, ÉTS**
 
@@ -71,7 +70,7 @@ Reçoit le depth de la camera et les cadres 2D. Retourne des boites en 3D.
 	- sensor_msgs/Image image
 	- string input_frame
 	- string output_frame
-	
+
 	Retourne une liste des BoundingBoxes3D
 	- sara_msgs/BoundingBoxes3D boundingBoxes3D
 
@@ -79,7 +78,7 @@ Reçoit le depth de la camera et les cadres 2D. Retourne des boites en 3D.
 * **`auto_publisher`** (bool, default: true)
 
 	Faut-il souscrire et publier automatiquement aux topic. Le service fonctionne quand même.
-	
+
 * **`camera_angle_width`** (float, default: 0.785398163397)
 
 	Largeur en radians de l'ouverture de la camera
@@ -95,7 +94,7 @@ Reçoit le depth de la camera et les cadres 2D. Retourne des boites en 3D.
 * **`maximum_distance`** (float, default: 50)
 
 	Distance maximum accepté en (m)
-	
+
 * **`camera_topic`** (string, default: "/head_xtion/depth/image_raw")
 
 	Topic où aller chercher le depth de la camera
@@ -107,7 +106,7 @@ Reçoit le depth de la camera et les cadres 2D. Retourne des boites en 3D.
 * **`base_frame`** (string, default: "base_link")
 
 	Frame tf de référence pour le message des boites 3d
-	
+
 * **`frame_ag`** (float, default: 0.0)
 
 	Temps de décalage en (s) dans le passé où regarder pour les tf.
@@ -123,9 +122,3 @@ Reçoit le depth de la camera et les cadres 2D. Retourne des boites en 3D.
 * **`default_box_size`** (float, default: 0.1)
 
 	Dimensions standards des boites
-  
-
-[ROS]: http://www.ros.org
-[rviz]: http://wiki.ros.org/rviz
-[opencv]: http://wiki.ros.org/opencv3
-[readme template]: https://github.com/ethz-asl/ros_best_practices/blob/master/ros_package_template/README.md
