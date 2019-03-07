@@ -95,7 +95,7 @@ ROS node receiving 2D bounding boxes from YOLO v2 (ROS wrapper) and convert them
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](https://github.com/walkingmachine/wm_frame_to_box/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](https://gist.github.com/JeffCousineau/5ddad03418b09750e2a4afcb198b50e1) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Versioning
 
