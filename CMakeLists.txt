@@ -56,7 +56,7 @@ add_executable( ${PROJECT_NAME}
         src/wm_frame_to_box.cpp
         )
 
-add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS} wm_frame_to_box_generate_messages)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
