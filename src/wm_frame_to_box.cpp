@@ -134,7 +134,7 @@ get_BB(cv_bridge::CvImagePtr Img, sara_msgs::BoundingBoxes2D BBs, std::string in
             BBs.boundingBoxes[i].probability = 0;
             dist = 0.2;
         }
-        ROS_INFO("%s dist: %lf prob: %lf", BBs.boundingBoxes[i].Class.data(), dist, BBs.boundingBoxes[i].probability);
+        ROS_INFO("%s dist: %lf prob: %lf", BBs.boundingBoxes[i].className.data(), dist, BBs.boundingBoxes[i].probability);
 
 
         // get pixel to rad ratio // TODO check if the dimentions are right
@@ -195,13 +195,13 @@ get_BB(cv_bridge::CvImagePtr Img, sara_msgs::BoundingBoxes2D BBs, std::string in
         /*** Create the box ***/
         // create a box message and fill all the parameters
         sara_msgs::BoundingBox3D box;
-        box.Class = BBs.boundingBoxes[i].Class;
-        box.Center = po;
+        box.className = BBs.boundingBoxes[i].className;
+        box.pose.position = po;
 
         // set the dimentions of the box
-        box.Depth = dims.x;
-        box.Width = dims.y;
-        box.Height = dims.z;
+        box.depth = dims.x;
+        box.width = dims.y;
+        box.height = dims.z;
         box.probability = BBs.boundingBoxes[i].probability;
 
         // Add the box to the list of boxes
@@ -213,15 +213,15 @@ get_BB(cv_bridge::CvImagePtr Img, sara_msgs::BoundingBoxes2D BBs, std::string in
             m.header.stamp = ros::Time::now();
             m.lifetime = ros::Duration(0.1);
             m.header.frame_id = output_frame;
-            m.ns = box.Class;
+            m.ns = box.className;
             m.id = ros::Time::now().toNSec()+int(box.probability*1000);
             m.type = m.CUBE;
-            m.pose.position.x = box.Center.x;
-            m.pose.position.y = box.Center.y;
-            m.pose.position.z = box.Center.z;
-            m.scale.x = box.Depth;
-            m.scale.y = box.Width;
-            m.scale.z = box.Height;
+            m.pose.position.x = box.pose.position.x;
+            m.pose.position.y = box.pose.position.y;
+            m.pose.position.z = box.pose.position.z;
+            m.scale.x = box.depth;
+            m.scale.y = box.width;
+            m.scale.z = box.height;
             m.color.r = 0;
             m.color.g = 1;
             m.color.b = 0;
